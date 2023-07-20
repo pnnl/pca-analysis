@@ -1,0 +1,13 @@
+Experiment,Soil Carbon Cycling/Lignin
+Date,20220401/20220422
+Operator,Zihua Zhu
+Ion,negative
+01,Goethite
+02,Goethite-200ppm Lignin
+03,Goethite-400ppm Lignin
+04,Goethite-600ppm Lignin
+05,Goethite-800ppm Lignin
+06,Goethite-1000ppm Lignin
+07,Goethite-1200ppm Lignin
+08,Goethite-1400ppm Lignin
+09,Lignin

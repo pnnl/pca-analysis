@@ -6,7 +6,7 @@ output:
 ---
 # SIMS-PCA
 
-Created by Peishi Jiang, modified by Qian Zhao
+Created by Peishi Jiang, modified by Qian Zhao and Cole Welch
 
 SIMS-PCA is a Python-based library that (1) performs PCA analysis on SIMS experiment data; and (2) generate a word-based report.
 
@@ -103,6 +103,6 @@ The code repository has been developed using Python 3.8.2 and the following pack
 
 
 
-**Developers**: Peishi Jiang, Zihua Zhu, Yadong Zhou
+**Developers**: Peishi Jiang, Cole Welch, Zihua Zhu, Yadong Zhou
 
-**Contact**: peishi.jiang@pnnl.gov; zihua.zhu@pnnl.gov
+**Contact**: cole.welch@pnnl.gov; peishi.jiang@pnnl.gov; zihua.zhu@pnnl.gov

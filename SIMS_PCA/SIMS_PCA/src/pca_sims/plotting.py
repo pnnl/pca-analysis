@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib import patches
+import warnings
 
 # Plotting settings
 params={
@@ -91,9 +92,7 @@ def plot_pca_result(
         x = x.split('-')[0]
         return int(x)
 
-    try:    
-        print(pca_df.index)
-        print(pca_df.columns)
+    try:
         pca_df['group']=pca_df.index
         pca_df['group']=pca_df['group'].apply(ExtractString)
         pca_df=pca_df.sort_values(by=['group'])
@@ -152,10 +151,13 @@ def plot_pca_result(
                     plt.figure(figsize=(10,7))
                     ax = plt.subplot(111)
                     fign+=1
-                    for i in grouplabel:
-                        x=pca_df[pca_df['group']==i]['PC'+str(j)].values
-                        y=pca_df[pca_df['group']==i]['PC'+str(k)].values
-                        figroup.append(plt.scatter(x, y,color=colorn[i-1],marker=markern[i-1]))
+
+                    # i goes from 0,1,...n-1 and label goes from n,n+1,...m. This acounts for the cases where the metadata 
+                    # doesn't start at 1.
+                    for i,label in enumerate(grouplabel):
+                        x=pca_df[pca_df['group']==label]['PC'+str(j)].values
+                        y=pca_df[pca_df['group']==label]['PC'+str(k)].values
+                        figroup.append(plt.scatter(x, y,color=colorn[i],marker=markern[i]))
                         
 
                     plt.xlabel('PC'+str(j)+' Scores'+' ('+str(per_varEx[j-1])+'%)'\
@@ -179,7 +181,7 @@ def plot_pca_result(
                     plt.figure(figsize=(10,7))
                     ax = plt.subplot(111)
                     fign+=1
-                    for i in grouplabel:
+                    for i,label in enumerate(grouplabel):
                         x=pca_df[pca_df['group']==i]['PC'+str(j)].values
                         y=pca_df[pca_df['group']==i]['PC'+str(k)].values
                         cov = np.cov(x, y)
@@ -188,12 +190,12 @@ def plot_pca_result(
                         w, h = 2 * nstd * np.sqrt(np.abs(vals))
                         ell = patches.Ellipse(xy=(np.mean(x), np.mean(y)),
                                     width=w, height=h,
-                                    angle=theta, edgecolor=colorn[i-1]\
+                                    angle=theta, edgecolor=colorn[i]\
                                         , linestyle='-', linewidth=2.0,
-                                        facecolor=colorn[i-1], alpha=0.2)
+                                        facecolor=colorn[i], alpha=0.2)
                         # ell.set_facecolor('none')
                         ax.add_artist(ell)
-                        figroup.append(plt.scatter(x, y,color=colorn[i-1],marker=markern[i-1]))
+                        figroup.append(plt.scatter(x, y,color=colorn[i],marker=markern[i]))
                         
 
                     plt.xlabel('PC'+str(j)+' Scores'+' ('+str(per_varEx[j-1])+'%)'\
@@ -211,21 +213,28 @@ def plot_pca_result(
                     fig_scores_confid_set_j.append(fig_scores_confid)
             fig_scores_confid_set.append(fig_scores_confid_set_j)
                     
-    ## Add new plot here!!! 2020-11-6
+        ## Add new plot here!!! 2020-11-6
         for pc in range(1,max_pcacomp+1):
             plt.figure(figsize=(14,7))
             ax = plt.subplot(111)
             group_nums = len(grouplabel)
             plt.xlim(left=0, right=10*(group_nums+1))
             plt.xticks([])
-            for i,label in enumerate(grouplabel):
-                heights = pca_df[pca_df['group']==label]['PC'+str(pc)].values
-                pt_nums = len(heights)
-                if pt_nums == 1:
-                    x_positions = [10*(i+1)]
-                else:
-                    x_positions = [10*(i+1)-7/2+x*7/(pt_nums-1) for x in range(pt_nums)]
-                figroup.append(plt.scatter(x_positions,heights, color=colorn[label-1],marker=markern[label-1]))
+
+            # TODO Still getting /0 warning, nothing being plotted.
+            with warnings.catch_warnings(record=True) as w:
+                for i,label in enumerate(grouplabel):
+                    heights = pca_df[pca_df['group']==label]['PC'+str(pc)].values
+                    pt_nums = len(heights)
+                    if pt_nums == 1:
+                        x_positions = [10*(i+1)]
+                    else:
+                        x_positions = [10*(i+1)-7/2+x*7/(pt_nums-1) for x in range(pt_nums)]
+                    figroup.append(plt.scatter(x_positions,heights, color=colorn[i],marker=markern[i]))
+
+                    if len(w) > 0:
+                        print("---------->", w, pt_nums, heights, x_positions, i, label, x)
+
             bottom, top = plt.ylim()
             # for i,label in enumerate(grouplabel):
             #     plt.text(x=10*(i+1),y=bottom-(top-bottom)/10,s=legendlabel[i],fontsize=28,rotation=15\

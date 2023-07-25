@@ -46,7 +46,7 @@ do_update = input('-------->Would you like to update values using measured masse
                   'assume you want to do PCA. \n')
 
 if do_update.strip() == 'y':
-    print('-------->Updating peak assignments using measured masses...')
+    print('-------->Updating Peak Assignments Using Measured Masses...')
 
     pcasims.update_classifications()
 
@@ -72,4 +72,4 @@ else:
 
     print('-------->Data Exporting...')
     print('\n\n\n-------->Congratulations!')
-    print('-------->Please Pick Results in Exports Folder.')
+    print('-------->Please Check Results In The output_sample Folder.')

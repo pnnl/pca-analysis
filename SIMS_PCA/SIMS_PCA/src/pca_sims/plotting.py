@@ -81,13 +81,21 @@ def plot_pca_result(
 
     # FETCH GROUP LABEL
     print('-------->Score Plot and Confidence Ellipse Drawing...')
-    def Extractring(x):
-        x=str(x)
-        return int(x[0]+x[1])
+    '''
+    This helper function takes the group names, which we expect to be of the following form:
+             <A group of digits> - <P OR N> <A number from 1-6>
+    for instance, 072-P6 is a typical group name. Here, we extract the digits for later use by splitting on the -.
+    '''
+    def ExtractString(x):
+        x = str(x)
+        x = x.split('-')[0]
+        return int(x)
 
     try:    
+        print(pca_df.index)
+        print(pca_df.columns)
         pca_df['group']=pca_df.index
-        pca_df['group']=pca_df['group'].apply(Extractring)
+        pca_df['group']=pca_df['group'].apply(ExtractString)
         pca_df=pca_df.sort_values(by=['group'])
         # print(pca_df)
         # pca_df.to_csv(pcaDir+'output/PC1-{}_SCORE_TABLE.txt'.format(max_pcacomp))
@@ -140,7 +148,7 @@ def plot_pca_result(
         for j in range(1,max_pcacomp+1):
             fig_scores_set_j = []
             for k in range(j+1,max_pcacomp+1):
-                if j !=k:
+                if j != k:
                     plt.figure(figsize=(10,7))
                     ax = plt.subplot(111)
                     fign+=1
@@ -167,7 +175,7 @@ def plot_pca_result(
         for j in range(1,max_pcacomp+1):
             fig_scores_confid_set_j = []
             for k in range(j+1,max_pcacomp+1):
-                if j !=k:
+                if j != k:
                     plt.figure(figsize=(10,7))
                     ax = plt.subplot(111)
                     fign+=1

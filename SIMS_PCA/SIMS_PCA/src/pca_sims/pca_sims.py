@@ -55,6 +55,8 @@ class pca_sims(object):
         # description['date'] = description_df.loc['ToF-SIMS testing date',1]
         # description['operator'] = description_df.loc['ToF-SIMS operator',1]
 
+        # Extract the sample names (e.g., Goethite-Tannic Acid 1400 ppm) from the metadata file. Note that we
+        # must exclude the first 4 lines since they include other information.
         sample_description_set = []
         n_samples = metadata_df.shape[0] - 4
         for i in range(n_samples):

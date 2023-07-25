@@ -356,27 +356,27 @@ display: none;
 
 <div id="sims-pca" class="section level1">
 <h1>SIMS-PCA</h1>
-<p>Created by Peishi Jiang, modified by Qian Zhao</p>
-<p>SIMS-PCA is a Python-based library that (1) performs PCA analysis on
-SIMS experiment data; and (2) generate a word-based report.</p>
+<p>Created by Peishi Jiang, modified by Qian Zhao and Cole Welch</p>
+<p>SIMS-PCA is a Python-based library that (1) performs PCA analysis on SIMS experiment data and (2) generates a word-based report.</p>
 <div id="procedures" class="section level3">
 <h3>Procedures</h3>
 <p><strong>Step 1</strong>: Prepare the python software</p>
+<p>1.0 If on Windows, download the latest Ubuntu version in addition to the Windows Subsystem for Linux (WSL) on your personal or PNNL computer. If you are a Mac user, you can skip to the next step.</p>
 <p>1.1. Download and install Python software with version 3.8.2 or newer
-at <code>https://www.python.org/downloads/</code>.</p>
+at <code>https://www.python.org/downloads/</code> or by using your preferred package manager between pip and Anaconda.</p>
 <p>1.2. Open Terminal to launch Python.</p>
-<div class="line-block">        In Mac, press <code>cmd+Space</code>,
+<div class="line-block">        On Mac, press <code>cmd+Space</code>,
 then type <code>Terminal</code> to open Terminal.<br />
-        In PC, press the <code>Ctrl+Alt+W</code> to open Terminal</div>
+        On PC, press the <code>Ctrl+Alt+W</code> to open Terminal</div>
 <p>1.3. Check installed packages.</p>
 <div class="line-block">       1.3.1 (Optional) Exit python in the
 Terminal by typing <code>exit()</code>. Now, your path should under
 <code>computername:~username$</code><br />
        1.3.2 type <code>pip list</code> to check the list of packages
 installed. You need to have packages listed below in the table.</div>
-<p>1.4. Install packages (Optional).</p>
-<div class="line-block">       1.4.1 Type
-<code>pip install packagename</code><br />
+<p>1.4. Install packages (If not already installed).</p>
+<div class="line-block">       1.4.1 Enter
+<code>pip install packagename</code> into Terminal. If on PNNL network, you NEED to use the proxy option when installing packages via pip or you will get error messages. The command <code>pip install --proxy=http://proxy01.pnl.gov:3128 packagename</code> should do the trick.<br />
        1.4.2 If you cannot install with <code>pip install</code>
 command, install package manually.<br />
                   For example: Google <code>python-docx</code> to
@@ -406,9 +406,9 @@ make sure defining the correct file/folder paths in
 <p>3.2 Change the correct path of <code>main.py</code> file in the
 Terminal.</p>
 <div class="line-block">      For example, type
-<code>cd Downloads/SIMS_PCA/src/</code> in the Terminal under
+<code>cd Downloads/pca/SIMS_PCA/SIMS_PCA/src</code> in the Terminal under
 <code>computername:~username$</code>and hit <code>Enter</code>.</div>
-<p>3.3 Run <code>main.py</code>script by type
+<p>3.3 Run <code>main.py</code>script by typing
 <code>python main.py</code> in the Terminal and hit
 <code>Enter</code>.</p>
 <p>3.3 Get the word report in the defined <code>outDir</code>, which is
@@ -480,16 +480,16 @@ and the metadata of the experiment description.</li>
 <li><code>output</code>: provides the outputs of the code, including
 multiple PCA plots and a word report (the name of the repository can be
 changed; see below)</li>
-<li><code>src</code>: provides the source codes
+<li><code>src</code>: provides the source code
 <ul>
 <li><code>pca_sims</code>: stores the source code for PCA analysis,
 plotting, and report generation.</li>
-<li><code>main.py</code>: a python function that run the codes on one
-experiment.</li>
+<li><code>main.py</code>: a python function that runs all the programs above in one
+file.</li>
 </ul></li>
 </ul>
-<p><strong>Developers</strong>: Peishi Jiang, Zihua Zhu, Yadong Zhou</p>
-<p><strong>Contact</strong>: <a href="mailto:peishi.jiang@pnnl.gov" class="email">peishi.jiang@pnnl.gov</a>; <a href="mailto:zihua.zhu@pnnl.gov" class="email">zihua.zhu@pnnl.gov</a></p>
+<p><strong>Developers</strong>: Peishi Jiang, Cole Welch, Zihua Zhu, Yadong Zhou</p>
+<p><strong>Contact</strong>: <a href="mailto:cole.welch@pnnl.gov" class="email">cole.welch@pnnl.gov</a>; <a href="mailto:peishi.jiang@pnnl.gov" class="email">peishi.jiang@pnnl.gov</a>; <a href="mailto:zihua.zhu@pnnl.gov" class="email">zihua.zhu@pnnl.gov</a></p>
 </div>
 </div>
 

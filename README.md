@@ -31,7 +31,7 @@ SIMS-PCA is a Python-based library that (1) performs PCA analysis on SIMS experi
         
 1.4. Install packages (If not already installed).
 
-|        1.4.1 Enter `pip install packagename` into Terminal. If on PNNL network, you NEED to use the proxy option when installing packages via pip or you will get error messages. The command `pip install --proxy=http://proxy01.pnl.gov:3128 <package name>` should do the trick.
+|        1.4.1 Enter `pip install packagename` into Terminal. If on PNNL network, you NEED to use the proxy option when installing packages via pip or you will get error messages. The command `pip install --proxy=http://proxy01.pnl.gov:3128 packagename` should do the trick.
         
 |        1.4.2 If you cannot install with `pip install` command, install package manually. 
         
@@ -54,9 +54,9 @@ found in PCA_Analysis_Manual_rev3 (note that some sections of this document have
 
 3.2 Change the correct path of `main.py` file in the Terminal. 
 
-|       For example, type `cd Downloads/pca/SIMS_PCA/SIMS_PCA` in the Terminal under `computername:~username$`and hit `Enter`.
+|       For example, type `cd Downloads/pca/SIMS_PCA/SIMS_PCA/src` in the Terminal under `computername:~username$`and hit `Enter`.
 
-3.3 Run `main.py `script by type `python main.py` in the Terminal and hit `Enter`.
+3.3 Run `main.py `script by typing `python main.py` in the Terminal and hit `Enter`.
 
 3.3 Get the word report in the defined `outDir`, which is `output_sample/report.docx` by default.
 

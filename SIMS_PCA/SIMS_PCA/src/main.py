@@ -26,10 +26,10 @@ f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_recor
 f_doc_negative_mass = os.path.join(pcaDir, "sims-data", "negative_doc_mass_record.csv")
 
 # Indication whether it is for positive or negative ion
-positive_or_negative_ion = 'negative'
+positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/sims_data.txt')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_POSITIVE_20020202_Zihua_soils.TXT')
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')

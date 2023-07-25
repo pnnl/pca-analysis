@@ -31,6 +31,8 @@ class pca_sims(object):
         # Read SIMS data
         try:
             rawdata=pd.read_csv(f_rawsims_data,sep='\t')
+            # TODO
+            print(rawdata)
             rawdata.dropna(inplace=True)
             mass_raw = rawdata['Mass (u)'].values
             rawdata['Mass (u)']=rawdata['Mass (u)'].apply(np.round).astype(int)
@@ -101,6 +103,8 @@ class pca_sims(object):
 
             # PCA
             pca=PCA()
+            # TODO
+            # print(scaled_data)
             pca.fit(scaled_data)
             pca_data=pca.transform(scaled_data)
             pca_df=pd.DataFrame(pca_data,index=samplelist,columns=labels)

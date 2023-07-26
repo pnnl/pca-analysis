@@ -1,0 +1,2 @@
+# Ignore all files in output folder since they are automatically generated and change each time the code is run.
+/SIMS_PCA/SIMS_PCA/output_sample/*

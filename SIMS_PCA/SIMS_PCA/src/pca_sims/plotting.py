@@ -182,8 +182,8 @@ def plot_pca_result(
                     ax = plt.subplot(111)
                     fign+=1
                     for i,label in enumerate(grouplabel):
-                        x=pca_df[pca_df['group']==i]['PC'+str(j)].values
-                        y=pca_df[pca_df['group']==i]['PC'+str(k)].values
+                        x=pca_df[pca_df['group']==label]['PC'+str(j)].values
+                        y=pca_df[pca_df['group']==label]['PC'+str(k)].values
                         cov = np.cov(x, y)
                         vals, vecs = eigsorted(cov)
                         theta = np.degrees(np.arctan2(*vecs[:,0][::-1]))
@@ -196,7 +196,6 @@ def plot_pca_result(
                         # ell.set_facecolor('none')
                         ax.add_artist(ell)
                         figroup.append(plt.scatter(x, y,color=colorn[i],marker=markern[i]))
-                        
 
                     plt.xlabel('PC'+str(j)+' Scores'+' ('+str(per_varEx[j-1])+'%)'\
                         ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
@@ -213,6 +212,7 @@ def plot_pca_result(
                     fig_scores_confid_set_j.append(fig_scores_confid)
             fig_scores_confid_set.append(fig_scores_confid_set_j)
                     
+    
         ## Add new plot here!!! 2020-11-6
         for pc in range(1,max_pcacomp+1):
             plt.figure(figsize=(14,7))
@@ -221,19 +221,15 @@ def plot_pca_result(
             plt.xlim(left=0, right=10*(group_nums+1))
             plt.xticks([])
 
-            # TODO Still getting /0 warning, nothing being plotted.
-            with warnings.catch_warnings(record=True) as w:
-                for i,label in enumerate(grouplabel):
-                    heights = pca_df[pca_df['group']==label]['PC'+str(pc)].values
-                    pt_nums = len(heights)
-                    if pt_nums == 1:
-                        x_positions = [10*(i+1)]
-                    else:
-                        x_positions = [10*(i+1)-7/2+x*7/(pt_nums-1) for x in range(pt_nums)]
-                    figroup.append(plt.scatter(x_positions,heights, color=colorn[i],marker=markern[i]))
-
-                    if len(w) > 0:
-                        print("---------->", w, pt_nums, heights, x_positions, i, label, x)
+            for i,label in enumerate(grouplabel):
+                heights = pca_df[pca_df['group']==label]['PC'+str(pc)].values
+                pt_nums = len(heights)
+                
+                if pt_nums == 1:
+                    x_positions = [10*(i+1)]
+                else:
+                    x_positions = [10*(i+1)-7/2+x*7/(pt_nums-1) for x in range(pt_nums)]
+                figroup.append(plt.scatter(x_positions,heights, color=colorn[i],marker=markern[i]))
 
             bottom, top = plt.ylim()
             # for i,label in enumerate(grouplabel):

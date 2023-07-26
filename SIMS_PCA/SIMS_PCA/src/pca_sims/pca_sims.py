@@ -31,7 +31,7 @@ class pca_sims(object):
         # Read SIMS data
         try:
             rawdata=pd.read_csv(f_rawsims_data,sep='\t')
-            # TODO
+            # TODO Remove
             print(rawdata)
             rawdata.dropna(inplace=True)
             mass_raw = rawdata['Mass (u)'].values

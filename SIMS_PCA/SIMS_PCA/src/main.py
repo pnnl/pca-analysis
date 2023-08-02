@@ -12,7 +12,8 @@ import logging
 # Disable matplotlib font logging (it outputs unnecessary info about missing fonts)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
-from pca_sims import pca_sims
+from pca_sims.pca_sims import pca_sims
+from pca_sims.species_classifier import species_classifier
 
 # The main PCA folder (if storing your data on Windows, this is probably
 # /mnt/c/Users/<INSERT USERNAME>/OneDrive - PNNL/Documents/pca/SIMS_PCA/SIMS_PCA).
@@ -34,42 +35,49 @@ f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_POSITIVE_2002
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
-# Initialize the PCA-SIMS instance
-pcasims = pca_sims(f_rawsims_data, f_metadata, pcaDir, outDir)
+# Initialize the classifier and PCA-SIMS instances
+classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv')
 
-# TODO Add if()s and flags for whether we want to do PCA or not each time we run this file.
-# Maybe more user flexibility in general?  Need flags for 1) Read, 2) PCA, 3) Update.
+rel_prob_matrix = classifier.calculate_probabilities()
+classifier.measure_accuracy(rel_prob_matrix)
 
-# Take user input to decide whether we would like to do PCA (usually done on the first pass) or update the
-# document-based classifications with calibrated data (usually done on later passes).
-do_update = input('-------->Would you like to update values using measured masses (y/n)? If not, I will ' +
-                  'assume you want to do PCA. \n')
 
-if do_update.strip() == 'y':
-    print('-------->Updating Peak Assignments Using Measured Masses...')
 
-    pcasims.update_classifications()
+# pcasims = pca_sims(f_rawsims_data, f_metadata, pcaDir, outDir)
 
-    print('-------->Done.')
-else:
-    # Perform PCA
-    pcasims.perform_pca()
+# # TODO Add if()s and flags for whether we want to do PCA or not each time we run this file.
+# # Maybe more user flexibility in general?  Need flags for 1) Read, 2) PCA, 3) Update.
 
-    # Identify chemical components based on existing document mass
-    if positive_or_negative_ion == 'positive':
-        pcasims.identify_components_from_file(f_doc_positive_mass, positive_ion=True)
-    elif positive_or_negative_ion == 'negative':
-        pcasims.identify_components_from_file(f_doc_negative_mass, positive_ion=False)
+# # Take user input to decide whether we would like to do PCA (usually done on the first pass) or update the
+# # document-based classifications with calibrated data (usually done on later passes).
+# do_update = input('-------->Would you like to update values using measured masses (y/n)? If not, I will ' +
+#                   'assume you want to do PCA. \n')
 
-    # Rule-based analysis
-    pcasims.perform_rule_based_analysis()
+# if do_update.strip() == 'y':
+#     print('-------->Updating Peak Assignments Using Measured Masses...')
 
-    # Plot PCA result
-    pcasims.plot_pca_result()
+#     pcasims.update_classifications()
 
-    # Generate the report
-    pcasims.generate_report()
+#     print('-------->Done.')
+# else:
+#     # Perform PCA
+#     pcasims.perform_pca()
 
-    print('-------->Data Exporting...')
-    print('\n\n\n-------->Congratulations!')
-    print('-------->Please Check Results In The output_sample Folder.')
+#     # Identify chemical components based on existing document mass
+#     if positive_or_negative_ion == 'positive':
+#         pcasims.identify_components_from_file(f_doc_positive_mass, positive_ion=True)
+#     elif positive_or_negative_ion == 'negative':
+#         pcasims.identify_components_from_file(f_doc_negative_mass, positive_ion=False)
+
+#     # Rule-based analysis
+#     pcasims.perform_rule_based_analysis()
+
+#     # Plot PCA result
+#     pcasims.plot_pca_result()
+
+#     # Generate the report
+#     pcasims.generate_report()
+
+#     print('-------->Data Exporting...')
+#     print('\n\n\n-------->Congratulations!')
+#     print('-------->Please Check Results In The output_sample Folder.')

@@ -13,8 +13,8 @@ from .report import pca_sims_report
 import time
 
 
-positive_ion_category = ["Hydrocarbon", "Oxygen-contained organics", "Nitrogen-contained organics", "Benzene-contained organics", "PDMS"]
-negative_ion_category = ["Hydrocarbon", "Nitrogen-contained organics", "SiOx", "SOx", "POx", "NOx", "Benzene-contained organics", "Organic acids", "Fatty acids"]
+positive_ion_category = ["Hydrocarbon", "Oxygen-containing organics", "Nitrogen-containing organics", "Benzene-containing organics", "PDMS"]
+negative_ion_category = ["Hydrocarbon", "Nitrogen-containing organics", "SiOx", "SOx", "POx", "NOx", "Benzene-containing organics", "Organic acids", "Fatty acids"]
 
 
 class pca_sims(object):
@@ -25,20 +25,20 @@ class pca_sims(object):
         f_metadata: str,
         pcaDir: str,
         outDir: str,
-        # f_group_name: str = "Group Names.txt",
     ):
         print('\n-------->Reading Data...')
         # Read SIMS data
         try:
             rawdata=pd.read_csv(f_rawsims_data,sep='\t')
-            # TODO Remove
-            print(rawdata)
             rawdata.dropna(inplace=True)
             mass_raw = rawdata['Mass (u)'].values
             rawdata['Mass (u)']=rawdata['Mass (u)'].apply(np.round).astype(int)
             rawdata.set_index(rawdata['Mass (u)'],inplace=True)
             mass=rawdata.index
             rawdata.drop(columns=['Mass (u)'],inplace=True)
+            # TODO Remove
+            print("rawdata: ", rawdata)
+            print("mass: ", mass)
         except:
             print(traceback.print_exc())
             print('***Error! Cannot Find Correct File!***')
@@ -51,9 +51,6 @@ class pca_sims(object):
         description['date'] = metadata_df.loc['Date',1]
         description['operator'] = metadata_df.loc['Operator',1]
         description['ion'] = metadata_df.loc['Ion',1]
-        # description['experiment'] = description_df.loc['Experiment',1]
-        # description['date'] = description_df.loc['ToF-SIMS testing date',1]
-        # description['operator'] = description_df.loc['ToF-SIMS operator',1]
 
         # Extract the sample names (e.g., Goethite-Tannic Acid 1400 ppm) from the metadata file. Note that we
         # must exclude the first 4 lines since they include other information.
@@ -84,12 +81,14 @@ class pca_sims(object):
             os.makedirs(os.path.join(pcaDir, outDir))
 
         # Initialize the mass identification
-        # self.mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
-        # self.mass_id['raw_mass'] = mass_raw
         self.positive_mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
         self.negative_mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
         self.positive_mass_id['raw_mass'] = mass_raw
         self.negative_mass_id['raw_mass'] = mass_raw
+
+        # TODO Remove
+        print("positive_mass_id: ", self.positive_mass_id)
+        print("negative_mass_id: ", self.negative_mass_id)
     
     # def perform_pca(self, max_pcacomp:int=5):
     def perform_pca(self):
@@ -105,8 +104,6 @@ class pca_sims(object):
 
             # PCA
             pca=PCA()
-            # TODO
-            # print(scaled_data)
             pca.fit(scaled_data)
             pca_data=pca.transform(scaled_data)
             pca_df=pd.DataFrame(pca_data,index=samplelist,columns=labels)
@@ -155,29 +152,15 @@ class pca_sims(object):
         
         # TODO Remove
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        #     print(mass_id)
+        #     print("mass_id: ", mass_id)
 
         if positive_ion:
             self.positive_mass_id = mass_id
         else:
             self.negative_mass_id = mass_id
-
-        # for unit_mass in self.mass_id.index:
-        #     if unit_mass in doc_mass.index:
-        #         assignment    = doc_mass.loc[unit_mass, 'Assignment'].split(',')
-        #         assignment    = [assign.strip() for assign in assignment]
-        #         document_mass = doc_mass.loc[unit_mass, 'Document Mass'].split(',') 
-        #         document_mass = [float(mass) for mass in document_mass]
-        #         # if np.isnan(self.mass_id.loc[unit_mass, 'possible_assignment']):
-        #         if not isinstance(self.mass_id.loc[unit_mass, 'possible_assignment'], list):
-        #             self.mass_id.at[unit_mass, 'possible_assignment'] = assignment
-        #             self.mass_id.at[unit_mass, 'document_mass']       = document_mass
-        #         else:
-        #             self.mass_id.at[unit_mass, 'possible_assignment'] += assignment
-        #             self.mass_id.at[unit_mass, 'document_mass']       += document_mass 
-        #         print('Identified unique mass {} from the documentation with Document Mass {} and assignment {}'.format(
-        #             unit_mass, document_mass, assignment))
-        # print(self.mass_id)
+        # TODO Remove
+        print("positive_mass_id: ", self.positive_mass_id)
+        print("negative_mass_id: ", self.negative_mass_id)
 
     def perform_rule_based_analysis(self):
         """Perform rule-based analysis to identify chemical components."""
@@ -188,7 +171,6 @@ class pca_sims(object):
         max_pcacomp:int=5
     ):
         """Plot PCA analysis result."""
-        # plot_pca_result(self.pca, self.mass, self.samplelist, self.pcaDir)
         pca_maxpcacomp_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set = \
                 plot_pca_result(self.pca, self.pca_data, self.samplelist, self.mass, 
                                 # self.pcaDir, self.outDir, self.f_group_name, max_pcacomp)
@@ -213,7 +195,6 @@ class pca_sims(object):
 
         if self.positive_ion:
             # PCA analysis of positive ToF-SIMS spectra
-            # f_positive_ion_report = os.path.join(self.pcaDir, "output", "pca_analysis_positive_ion_tof-sims_spectra.docx") 
             for pcacomp in range(1,max_pcacomp+1):
                 self.generate_analysis_pcacomp(pcacomp,positive_ion=True)
 
@@ -321,75 +302,61 @@ class pca_sims(object):
             active, type = True, '+pca'
             loadings_sign = all_loading_table.loc[ion_list] > 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
+            top_ion_list = intersect(ion_list, p_loading_table['Unit Mass'])
         elif len(intersect(ion_list, n_loading_table['Unit Mass'])) >= 2:
             active, type = True, '-pca'
             loadings_sign = all_loading_table.loc[ion_list] < 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
+            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
         signals["Hydrocarbon"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
         
-        # "Oxygen-contained organics", 
+        # "Oxygen-containing organics", 
         ion_list = [31, 19] 
         if 31 in p_loading_table['Unit Mass']:
             active, type = True, '+pca'
             selected_ion_list = [31,19] if all_loading_table.loc[19] > 0 else [31]
             top_ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
-            # top_ion_list = selected_ion_list
         elif 31 in n_loading_table['Unit Mass']:
             active, type = True, '-pca'
             selected_ion_list = [31,19] if all_loading_table.loc[19] < 0 else [31]
             top_ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
-            # top_ion_list = selected_ion_list
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Oxygen-contained organics"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
+        signals["Oxygen-containing organics"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
 
-        # "Nitrogen-contained organics", 
+        # "Nitrogen-containing organics", 
         ion_list = [30, 44, 70, 86, 18] 
         if len(intersect(ion_list, p_loading_table['Unit Mass'])) >= 1:
             active, type = True, '+pca'
             loadings_sign = all_loading_table.loc[ion_list] > 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
+            top_ion_list = intersect(ion_list, p_loading_table['Unit Mass'])
         elif len(intersect(ion_list, n_loading_table['Unit Mass'])) >= 1:
             active, type = True, '-pca'
             loadings_sign = all_loading_table.loc[ion_list] < 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
+            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Nitrogen-contained organics"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
+        signals["Nitrogen-containing organics"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
 
-        # "Benzene-contained organics", 
+        # "Benzene-containing organics", 
         ion_list = [91, 77, 105, 115 ] 
         if 91 in p_loading_table['Unit Mass']:
             active, type = True, '+pca'
             loadings_sign = all_loading_table.loc[ion_list] > 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
             top_ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, p_loading_table['Unit Mass'])
         elif 91 in n_loading_table['Unit Mass']:
             active, type = True, '-pca'
             loadings_sign = all_loading_table.loc[ion_list] < 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
+            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Benzene-contained organics"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list} 
+        signals["Benzene-containing organics"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list} 
 
         # "PDMS"
         ion_list = [73, 147] 
@@ -417,23 +384,19 @@ class pca_sims(object):
             active, type = True, '+pca'
             loadings_sign = all_loading_table.loc[ion_list] > 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
+            top_ion_list = intersect(ion_list, p_loading_table['Unit Mass'])
         elif len(intersect(ion_list, n_loading_table['Unit Mass'])) >= 2:
             active, type = True, '-pca'
             loadings_sign = all_loading_table.loc[ion_list] < 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
-            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
-            # selected_ion_list = all_loading_table.loc[ion_list, loadings_sign].values
-            # ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
+            top_ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
         signals["Hydrocarbon"] = {"active":active, "type":type, 
                                   "top_ion_list": top_ion_list,
                                   "ion_list": selected_ion_list}
 
-        # "Nitrogen-contained organics", 
+        # "Nitrogen-containing organics", 
         ion_list = [26, 42] 
         if (len(intersect(ion_list, p_loading_table['Unit Mass'])) >= 1) and \
            (np.sum(all_loading_table.loc[ion_list] > 0) == 2):
@@ -447,7 +410,7 @@ class pca_sims(object):
             selected_ion_list = [26,42]
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Nitrogen-contained organics"] = {"active":active, "type":type, 
+        signals["Nitrogen-containing organics"] = {"active":active, "type":type, 
                                                   "top_ion_list": top_ion_list,
                                                   "ion_list": selected_ion_list}
 
@@ -531,7 +494,7 @@ class pca_sims(object):
                           "top_ion_list": top_ion_list,
                           "ion_list": selected_ion_list}
 
-        # "Benzene-contained organics"
+        # "Benzene-containing organics"
         ion_list = [49, 36, 73] 
         if (len(intersect(ion_list, p_loading_table['Unit Mass'])) >= 1) and \
            (np.sum(all_loading_table.loc[ion_list] > 0) >= 2):
@@ -547,7 +510,7 @@ class pca_sims(object):
             top_ion_list = intersect(ion_list, n_loading_table['Unit Mass']) 
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Benzene-contained organics"] = {"active":active, "type":type,
+        signals["Benzene-containing organics"] = {"active":active, "type":type,
                                                  "top_ion_list": top_ion_list,
                                                  "ion_list": selected_ion_list}
 
@@ -575,8 +538,6 @@ class pca_sims(object):
             selected_ion_list = loadings_sign.index[loadings_sign].values
             top_ion_list = intersect(ion_list, p_loading_table['Unit Mass']) 
         if check_prominent(ion_list, all_loading_table, positive=False):
-        # elif (len(intersect(ion_list, n_loading_table['Unit Mass'])) >= 1) and \
-        #      (np.sum(all_loading_table.loc[ion_list] < 0) >= 2):
             active, type = True, '-pca'
             loadings_sign = all_loading_table.loc[ion_list] < 0
             selected_ion_list = loadings_sign.index[loadings_sign].values
@@ -588,12 +549,6 @@ class pca_sims(object):
                                   "ion_list": selected_ion_list}
 
         return signals
-        
-
-    # def _get_loading_scores(self, max_pcacomp:int=5):
-        # self.loading_scores = self.pca.components_[:max_pcacomp,:]
-        # self.loadingTable   = pd.DataFrame(self.loading_scores.T,index=self.mass,columns=[1,2,3,4,5])
-        # self.loadingTable   = pd.DataFrame(self.loading_scores.T,index=self.mass,columns=list(range(max_pcacomp)))
 
     
     # TODO Add code from test.py here once it has been tested out for a few lines using the model.

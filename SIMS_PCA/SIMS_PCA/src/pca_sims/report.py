@@ -71,9 +71,6 @@ class pca_sims_report(object):
     def write_plot_page(self, pcacomp:int, positive_ion:bool, score_plot:str, loading_plot:str,
                         positive_loading_table:pd.DataFrame, negative_loading_table:pd.DataFrame, 
                         ion_signals: Dict):
-        # print(positive_loading_table)
-        # print(negative_loading_table)
-        # exit()
         sign_ion = 'Positive' if positive_ion else 'Negative'
 
         document = self.document
@@ -88,16 +85,6 @@ class pca_sims_report(object):
         document.add_picture(loading_plot, width=Inches(5))  # Loading plot
 
         # Write the top 20 positive loading assignments
-        # positive_mz_assignment = ["{} ({})".format(positive_loading_table.loc[index, "Unit Mass"], 
-        #                                            positive_loading_table.loc[index, "Initial Peak Assignment"]) 
-        #                           if str(positive_loading_table.loc[index, "Initial Peak Assignment"]) != 'nan' else
-        #                           "{} (-)".format(positive_loading_table.loc[index, "Unit Mass"])
-        #                           for index in positive_loading_table.index]
-        # positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
-        # document.add_paragraph("High score samples contain more:")
-        # document.add_paragraph(", ".join(positive_mz_assignment), style="List Bullet") # top 20 positive loadings’ assignment and m/z values,  
-        # document.add_paragraph(", ".join(positive_dominant_ions), style="List Bullet") # ion categories
-
         document.add_paragraph("High score samples contain more:")
         p = document.add_paragraph("", style="List Bullet")
         for index in positive_loading_table.index:
@@ -112,16 +99,6 @@ class pca_sims_report(object):
         document.add_paragraph(", ".join(positive_dominant_ions), style="List Bullet") # ion categories
 
         # Write the top 20 negative loading assignments
-        # negative_mz_assignment = ["{} ({})".format(negative_loading_table.loc[index, "Unit Mass"], 
-        #                                            negative_loading_table.loc[index, "Initial Peak Assignment"]) 
-        #                           if str(negative_loading_table.loc[index, "Initial Peak Assignment"]) != 'nan' else
-        #                           "{} (-)".format(negative_loading_table.loc[index, "Unit Mass"])
-        #                           for index in negative_loading_table.index]
-        # negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
-        # document.add_paragraph("Low score samples contain more:")
-        # document.add_paragraph(", ".join(negative_mz_assignment), style="List Bullet") # top 20 negative loadings’ assignment and m/z values,  
-        # document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
-
         document.add_paragraph("Low score samples contain more:")
         p = document.add_paragraph("", style="List Bullet")
         for index in negative_loading_table.index:
@@ -172,27 +149,6 @@ class pca_sims_report(object):
         document.add_heading('{} ion spectra, molecular information from PC{} loadings plot'.format(sign_ion, pcacomp), 1)
 
         # Write the overview description
-        # positive_mz_assignment = ["{} ({})".format(positive_loading_table.loc[index, "Unit Mass"], 
-        #                                            positive_loading_table.loc[index, "Initial Peak Assignment"]) 
-        #                           if str(positive_loading_table.loc[index, "Initial Peak Assignment"]) != 'nan' else
-        #                           "{} (-)".format(positive_loading_table.loc[index, "Unit Mass"])
-        #                           for index in positive_loading_table.index]
-        # negative_mz_assignment = ["{} ({})".format(negative_loading_table.loc[index, "Unit Mass"], 
-        #                                            negative_loading_table.loc[index, "Initial Peak Assignment"]) 
-        #                           if str(negative_loading_table.loc[index, "Initial Peak Assignment"]) != 'nan' else
-        #                           "{} (-)".format(negative_loading_table.loc[index, "Unit Mass"])
-        #                           for index in negative_loading_table.index]
-        # document.add_paragraph(
-        #     """The major positive PC{0} loadings are {1}, indicating they are more observed in high PC{0} score samples.""".format(
-        #         pcacomp, ", ".join(positive_mz_assignment)
-        #     ),            
-        #     style="List Bullet"
-        # ) 
-        # document.add_paragraph(
-        #     """The major negative PC{0} loadings are {1}, indicating they are more observed in low PC{0} score samples.""".format(
-        #         pcacomp, ", ".join(negative_mz_assignment)
-        #     ),            
-        #     style="List Bullet"
         p = document.add_paragraph("""The major positive PC{0} loadings are """.format(pcacomp), style="List Bullet")
         for index in positive_loading_table.index:
             unit_mass, assign = positive_loading_table.loc[index, "Unit Mass"], positive_loading_table.loc[index, "Initial Peak Assignment"]
@@ -220,15 +176,7 @@ class pca_sims_report(object):
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         for ion_type in positive_dominant_ions:
             dominant_mass = ion_signals[ion_type]['top_ion_list']
-            # print(positive_loading_table.index)
-            # dominant_ions = ["{} ({})".format(
-            #     mass, positive_loading_table.loc[mass, "Initial Peak Assignment"]) for mass in dominant_mass]
-            # document.add_paragraph(
-            #     """{} signals, such as {}, are majorly found in positive loadings, indicating that high PC{} score samples contain more hydrocarbon.""".format(
-            #         ion_type, ", ".join(dominant_ions), pcacomp
-            #     ),
-            #     style="List Bullet"
-            # )
+            
             p = document.add_paragraph("{} signals, such as ".format(ion_type), style="List Bullet")
             for unit_mass in dominant_mass:
                 assign = positive_loading_table.loc[unit_mass, "Initial Peak Assignment"]
@@ -243,14 +191,7 @@ class pca_sims_report(object):
         
         for ion_type in negative_dominant_ions:
             dominant_mass = ion_signals[ion_type]['top_ion_list']
-            # dominant_ions = ["{} ({})".format(
-            #     mass, negative_loading_table.loc[mass, "Initial Peak Assignment"]) for mass in dominant_mass]
-            # document.add_paragraph(
-            #     """{} signals, such as {}, are majorly found in negative loadings, indicating that high PC{} score samples contain less hydrocarbon.""".format(
-            #         ion_type, ", ".join(dominant_ions), pcacomp
-            #     ),
-            #     style="List Bullet"
-            # )
+            
             p = document.add_paragraph("{} signals, such as ".format(ion_type), style="List Bullet")
             # print(ion_type, ion_signals[ion_type])
             for unit_mass in dominant_mass:

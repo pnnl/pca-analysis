@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 
+from .species_classifier import species_classifier
 from .plotting import plot_pca_result
 from .report import pca_sims_report
 import time
@@ -86,9 +87,15 @@ class pca_sims(object):
         self.positive_mass_id['raw_mass'] = mass_raw
         self.negative_mass_id['raw_mass'] = mass_raw
 
-        # TODO Remove
-        print("positive_mass_id: ", self.positive_mass_id)
-        print("negative_mass_id: ", self.negative_mass_id)
+        # TODO Change formatting so we can move over from obsolete train_data to positive/negative_doc_mass_record.csv
+        # TODO Add flexibility for either pos / neg ions
+        # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
+        self.classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv', self.positive_mass_id)
+        # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
+        self.rel_prob_matrix = self.classifier.calculate_probabilities()
+        # Save the top 3 potential candidates for each list.  We'll add them to the report later.
+        self.top_n_species = self.classifier.identify_top_n_species(3)
+
     
     # def perform_pca(self, max_pcacomp:int=5):
     def perform_pca(self):
@@ -162,6 +169,7 @@ class pca_sims(object):
         print("positive_mass_id: ", self.positive_mass_id)
         print("negative_mass_id: ", self.negative_mass_id)
 
+    # TODO This method is pretty much empty and should be removed.
     def perform_rule_based_analysis(self):
         """Perform rule-based analysis to identify chemical components."""
         print('-------->Rule based analysis...')
@@ -200,12 +208,10 @@ class pca_sims(object):
 
         else:
             # PCA analysis of negative ToF-SIMS spectra
-            # f_negative_ion_report = os.path.join(self.pcaDir, "output", "pca_analysis_negative_ion_tof-sims_spectra.docx") 
             for pcacomp in range(1,max_pcacomp+1):
                 self.generate_analysis_pcacomp(pcacomp,positive_ion=False)
         
         # Save the report
-        # self.report.save(os.path.join(self.pcaDir, "output", "report.docx"))
         self.report.save()
     
     def generate_analysis_pcacomp(self, pcacomp:int=1, positive_ion:bool=True):
@@ -234,31 +240,37 @@ class pca_sims(object):
 
         positive_loading_table=pd.DataFrame(
             data={"+ loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
-                  "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+                  "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
+                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more, "Updated Probabilities":[" "]*fetchn_more,})
         negative_loading_table=pd.DataFrame(
             data={"- loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
-                  "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+                  "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
+                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more, "Updated Probabilities":[" "]*fetchn_more,})
         
-        # Get accurate and Document Mass
+        # TODO This is where we need to change the tables that get put into the document; need to edit 'Document Mass' and 'Initial Peak Assignment' columns to look like:
+        #           6.0146, 2.0152, 1.0073, 6Li+, H2+, H+, 4.20e-07, 0.239, 0.761
+        # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
+            # Get the top + loadings by unit mass, then find the species corresponding to that unit mass (subtract 1 from unit mass to account 
+            # for 0-indexing)
             unit_mass = positive_loading_table.loc[ind, "Unit Mass"]
             # positive_loading_table.loc[ind, "Accurate Mass"] = mass_id.loc[unit_mass, 'raw_mass']
-            positive_loading_table.at[ind, "Document Mass"] = mass_id.loc[unit_mass, 'document_mass']
-            positive_loading_table.at[ind, "Initial Peak Assignment"] = mass_id.loc[unit_mass, 'possible_assignment']
+            positive_loading_table.at[ind, "Document Mass"] = self.top_n_species[unit_mass-1][0]
+            positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species[unit_mass-1][1]
+            positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
         for ind in negative_loading_table.index:
             unit_mass = negative_loading_table.loc[ind, "Unit Mass"]
             # negative_loading_table.at[ind, "Accurate Mass"] = mass_id.loc[unit_mass, 'raw_mass']
-            negative_loading_table.at[ind, "Document Mass"] = mass_id.loc[unit_mass, 'document_mass']
-            negative_loading_table.at[ind, "Initial Peak Assignment"] = mass_id.loc[unit_mass, 'possible_assignment']
+            negative_loading_table.at[ind, "Document Mass"] = self.top_n_species[unit_mass-1][0]
+            negative_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species[unit_mass-1][1]
+            negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
         negative_loading_table.index = negative_loading_table["Unit Mass"]
         
         med=pd.DataFrame(data={"+ loading":["- loading"],"No. #":["No. #"],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
-                               "Initial Peak Assignment":["Initial Peak Assignment"], "Measured Mass":["Measured Mass"], 
-                               "Updated Peak assignment":["Updated Peak assignment"],})
+                               "Initial Peak Assignment":["Initial Peak Assignment"], "Initial Probabilities":["Initial Probabilities"], 
+                               "Measured Mass":["Measured Mass"], "Updated Peak assignment":["Updated Peak assignment"], "Updated Probabilities":["Updated Probabilities"],})
 
         loading_table = pd.concat([positive_loading_table, med, negative_loading_table])
 
@@ -278,15 +290,17 @@ class pca_sims(object):
 
         # ----------------- Write the report -----------------------
         # Plot page
-        self.report.write_plot_page(pcacomp, positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
-                                    positive_loading_table, negative_loading_table, signals)
+        # TODO Uncomment
+        # self.report.write_plot_page(pcacomp, positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
+        #                             positive_loading_table, negative_loading_table, signals)
 
         # Table page
         self.report.write_table_page(pcacomp, positive_ion, positive_loading_table, negative_loading_table)
 
+        # TODO Uncomment
         # Analysis page
-        self.report.write_analysis_page(pcacomp, positive_ion, 
-                                        positive_loading_table, negative_loading_table, signals)
+        # self.report.write_analysis_page(pcacomp, positive_ion, 
+        #                                 positive_loading_table, negative_loading_table, signals)
 
     def _get_loading_scores(self):
         self.loading_scores = self.pca.components_

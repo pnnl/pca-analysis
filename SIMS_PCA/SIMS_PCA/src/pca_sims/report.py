@@ -8,7 +8,7 @@ from docx import Document
 from docx.shared import Inches
 from docx.oxml import OxmlElement, ns
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
+from docx.shared import Pt, Inches, Cm
 
 import pandas as pd
 
@@ -19,12 +19,20 @@ class pca_sims_report(object):
         self.f_report = f_report
         self.description = description
 
+        # Set the page margins
+        sections = self.document.sections
+        for section in sections:
+            section.top_margin = Inches(0.625)
+            section.bottom_margin = Inches(1)
+            section.left_margin = Inches(0.625)
+            section.right_margin = Inches(0.625)
+
         # Title page
         self._create_title_page()
     
     def _create_title_page(self):
         document = self.document
-        document.add_heading("\tPCA-SIMS Spectra Analysis Report", 0)
+        document.add_heading("\t\tPCA-SIMS Spectra Analysis Report", 0)
 
         # Add author and time
         description = self.description
@@ -65,7 +73,7 @@ class pca_sims_report(object):
         # Write the score plots
         for plots in score2d_plots:
             for plot in plots:
-                document.add_picture(plot, width=Inches(5))  # Score plot
+                document.add_picture(plot, width=Inches(6.5))  # (6.5" Score plots + 0.625" margin + 0.625" margin = 8" total)
 
 
     def write_plot_page(self, pcacomp:int, positive_ion:bool, score_plot:str, loading_plot:str,
@@ -112,6 +120,8 @@ class pca_sims_report(object):
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
 
+    # Writes a PCA loading table to the document. Columns are:
+    # +/- loading | No. # | Unit Mass | Document Mass | Initial Peak Assignment | Measured Mass | Updated Peak Assignment
     def write_table_page(self, pcacomp:int, positive_ion:bool,
                          p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame, 
      ):
@@ -218,34 +228,55 @@ class pca_sims_report(object):
         self.document.save(self.f_report)
 
 
+# Add a table to the end and create a reference variable along with an extra header row
 def document_add_table(document:Document, df:pd.DataFrame):
-    # add a table to the end and create a reference variable
-    # extra row is so we can add the header row
+    # Create number of rows + columns corresponding to the dataframe's size
     t = document.add_table(df.shape[0]+1, df.shape[1])
     t.style = 'Table Grid'
 
-    # add the header rows.
+    # Add the headers at the top of each column
     for j in range(df.shape[-1]):
         t.cell(0,j).text = df.columns[j]
 
-    # add the rest of the data frame
+    # Add the rest of the dataframe. Start at index 1 (see "i+1") to avoid conflicts with the header row, and handle 4 separate cases:
+    # 1) Value is NaN - Add blank text to the cell
+    # 2) Value is a list of non-floats - parse each string in the list (see document_add_assignment) and add it to a paragraph that is then added to the cell
+    # 3) Value is a list of floats - convert each list entry to a string and add it to the cell
+    # 4) Value is any non-list entity - convert it to a string and add it to the cell
     for i in range(df.shape[0]):
         for j in range(df.shape[-1]):
-            if str(df.values[i,j]) == 'nan':
-                t.cell(i+1,j).text = ''
-            elif isinstance(df.values[i,j], list) and not is_float(df.values[i,j][0]):
-                # run_table_row1_cell2 = table_row1_cell2.paragraphs[0].add_run('hello')
-                p = t.cell(i+1,j).add_paragraph()
-                document_add_assignment(p, df.values[i,j])
-            elif isinstance(df.values[i,j], list) and is_float(df.values[i,j][0]):
-                t.cell(i+1,j).text = ','.join(map(str, df.values[i,j]))
+            cur_entry = df.values[i,j]
+            # We expect each group to be either a nested list of lists or a single-depth list, which we handle with the if case here
+            if not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
+                group_size = 1
             else:
-                t.cell(i+1,j).text = str(df.values[i,j])
+                group_size = len(cur_entry)
+
+            # Iterate over multiple sublists of the current dataframe entry, but only if it has a nested list structure
+            for k in range(group_size):
+                if not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
+                    cur_group = cur_entry
+                else:
+                    cur_group = cur_entry[k]
+
+                if str(cur_group) == 'nan':
+                    t.cell(i+1,j).text = ''
+                elif isinstance(cur_group, list) and not is_float(cur_group[0]):
+                    p_species = t.cell(i+1,j).add_paragraph()
+                    document_add_assignment(p_species, cur_group)
+                elif isinstance(cur_group, list) and is_float(cur_group[0]):
+                    p_probs = t.cell(i+1,j).add_paragraph()
+                    p_probs.add_run('\n'.join(map(str, cur_group)))
+                else:
+                    t.cell(i+1,j).text = str(cur_group)
 
 
+# Parse strings representing the species assignments that we intend to add to a cell
 def document_add_assignment(p, assignment: list) -> None:
     n_assign = len(assignment)
+    # For each chemical species assignment (expect assign to be a string)
     for j,assign in enumerate(assignment):
+        # Pull off sign out front, then split the remaining string on any digits in the chemical formula (e.g., 'C3H6' -> ['C', 'H'])
         assign_, sign = assign[:-1], assign[-1]
         assign_ = re.split('(\d+)', assign_)
         assign_ = [s for s in assign_ if s != '']
@@ -262,7 +293,8 @@ def document_add_assignment(p, assignment: list) -> None:
         # Add sign
         text = p.add_run(sign)
         text.font.superscript = True
-        if j != n_assign-1: p.add_run(',')
+        # If not the last element, add a comma separator
+        if j != n_assign-1: p.add_run('\n')
         
 def create_element(name):
     return OxmlElement(name)

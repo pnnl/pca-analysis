@@ -19,27 +19,32 @@ class species_classifier:
         output_dim = data_ref.shape[0]
         print("Num output classes: ", output_dim)
 
-        # Select a bunch of random rows in the data
-        np.random.seed(2)
-        masses_test = data_test['raw_mass']
-
-        # TODO Implement uncertainty actually calculated from data
-        # Get approximate uncertainty of data
-        # a = data_test['raw_mass'].to_numpy()
-        # b = data_test['document_mass'].to_numpy()
-        # print("a: ", a)
-        # print("b: ", b)
-        # residues = a - b
-        # # residues = residues[residues != np.NaN]
-        # print(">>>>>>> Residues: ", residues)
-        # self.uncertainty = np.std(abs(residues))
-        # print(">>>>>>> Uncertainty: ", self.uncertainty)
-        self.uncertainty = 0.003
-
         self.test_size = test_size
-        self.masses_ref = data_ref['Precise Mass']
-        self.species_ref = data_ref['Species']
-        self.masses_test = data_test['raw_mass']
+        self.masses_ref = data_ref['Precise Mass'].to_numpy()
+        self.species_ref = data_ref['Species'].to_numpy()
+        self.masses_test = data_test['raw_mass'].to_numpy()
+        self.masses_document = data_test['document_mass'].to_numpy()
+
+        # Get approximate uncertainty from the data by comparing the test and document masses in the mass id file (data_test). We can exclude
+        # the document masses that have multiple potential classifications since they might artificially inflate the uncertainty depending on
+        # which one we select.
+        a = self.masses_test
+        b = self.masses_document
+
+        for i in range(len(b)):
+            if type(b[i]) != list:
+                pass
+            elif len(b[i]) != 1:
+                b[i] = np.nan
+            else:
+                b[i] = b[i][0]
+
+        residues = np.array(a - b)
+        residues = residues[~pd.isnull(residues)]
+        print(">>>>>>> Residues: ", residues)
+        self.uncertainty = np.std(abs(residues))
+        print(">>>>>>> Uncertainty: ", self.uncertainty)
+        # self.uncertainty = 0.003
 
     # Read the data, form representative Gaussian distributions around each peak, 
     # Returns: a matrix with each row representing the sample number and the columns in each row containing the probabilities. 
@@ -51,7 +56,7 @@ class species_classifier:
         
         # Make the known species masses into a row, then repeat for the length of the training data to prepare for mass array operations
         # in the next cell
-        precise_masses = np.reshape(np.array(masses_ref), (1,-1))
+        precise_masses = np.reshape(masses_ref, (1,-1))
         precise_masses = precise_masses.repeat(test_size,0)
         print("\nPrecise_masses: \n", precise_masses)
         print("\nmasses_test: \n", masses_test)
@@ -61,7 +66,7 @@ class species_classifier:
         # by the uncertainty to get the number of standard deviations each measured mass is from each of the 48 known species
         # masses, then use norm.cdf to convert to probabilities.
         prob_matrix = np.zeros((test_size,len(masses_ref)))
-        prob_matrix = (np.reshape(masses_test, (-1,1)) - precise_masses) / (10 * self.uncertainty)
+        prob_matrix = (np.reshape(masses_test, (-1,1)) - precise_masses) / (self.uncertainty)
         prob_matrix = (norm.cdf(-abs(prob_matrix)))
 
         # Calculate relative probabilities by scaling row sum to 1
@@ -76,9 +81,9 @@ class species_classifier:
     # species and reference document masses. However, we'll only keep elements that are within +/-0.5 of the Precise Mass
     # value to ensure we aren't giving useless predictions, so there may be fewer than n elements.
     def identify_top_n_species(self, n):
-        masses_ref = self.masses_ref.to_numpy()
-        species_ref = self.species_ref.to_numpy()
-        masses_test = self.masses_test.to_numpy()
+        masses_ref = self.masses_ref
+        species_ref = self.species_ref
+        masses_test = self.masses_test
         rel_prob_matrix = self.rel_prob_matrix
         top_n_list = []
 
@@ -102,32 +107,3 @@ class species_classifier:
         print("\n---------top_n_list: \n\n", top_n_list[20:50])
 
         return top_n_list
-
-
-    # Print out accuracy statistics and a list of incorrect classifications.
-    # def measure_accuracy(self, rel_prob_matrix):
-    #     data = self.data_ref
-    #     x_data = self.x_data
-    #     y_data = self.y_data
-    #     test_size = self.test_size
-        
-    #     # Now let's compare our array with the real labels and determine the classification accuracy of the Gaussian Process
-    #     y_pred = np.argmax(rel_prob_matrix, 1)
-    #     species_pred = [data.at[y, 'Species'] for y in y_pred]
-    #     species_act = [data.at[y, 'Species'] for y in y_data]
-
-    #     # print("\nPredicted: \n", species_pred)
-    #     # print("\nActual: \n", species_act)
-
-    #     class_acc = (y_pred == y_data).mean()*100
-    #     print("\nClassification Accuracy: ", str(class_acc) + "%")
-
-
-    #     # Show some incorrect classifications and what they should be
-    #     y_pred, y_data, species_pred, species_act = np.array(y_pred), np.array(y_data), np.array(species_pred), np.array(species_act)
-    #     prediction_mask = (y_pred != y_data)
-
-    #     print("\nIncorrect Predictions: \n", species_pred[prediction_mask])
-    #     print("\nCorrect Species: \n", species_act[prediction_mask])
-
-    #     print("\nIndices of Incorrect Predictions: \n", [i for i in range(len(prediction_mask)) if prediction_mask[i]])

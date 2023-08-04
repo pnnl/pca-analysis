@@ -232,6 +232,8 @@ class pca_sims_report(object):
         self.document.save(self.f_report)
 
 
+# ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
+
 # Add a table to the end and create a reference variable along with an extra header row
 def document_add_table(document:Document, df:pd.DataFrame):
     # Create number of rows + columns corresponding to the dataframe's size

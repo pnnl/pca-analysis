@@ -35,11 +35,10 @@ f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_POSITIVE_2002
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
 # Initialize the pca_sims instance
-pcasims = pca_sims(f_rawsims_data, f_metadata, pcaDir, outDir)
+pcasims = pca_sims(f_rawsims_data, f_metadata, pcaDir, outDir, positive_or_negative_ion)
 
-# TODO Add if()s and flags for whether we want to do PCA or not each time we run this file.
-# Maybe more user flexibility in general?  Need flags for 1) Read, 2) PCA, 3) Update.
 
+# TODO Implement the update side of this if statement
 # Take user input to decide whether we would like to do PCA (usually done on the first pass) or update the
 # document-based classifications with calibrated data (usually done on later passes).
 do_update = input('-------->Would you like to update values using measured masses (y/n)? If not, I will ' +
@@ -55,11 +54,15 @@ else:
     # Perform PCA
     pcasims.perform_pca()
 
-    # Identify chemical components based on existing document mass
+    # Identify chemical components based on existing document mass; use user-specified string positive_or_negative_ion
+    # to distinguish whether we should analyze using data from the .csv file containing + or - ions
     if positive_or_negative_ion == 'positive':
-        pcasims.identify_components_from_file(f_doc_positive_mass, positive_ion=True)
+        pcasims.identify_components_from_file(f_doc_positive_mass)
     elif positive_or_negative_ion == 'negative':
-        pcasims.identify_components_from_file(f_doc_negative_mass, positive_ion=False)
+        pcasims.identify_components_from_file(f_doc_negative_mass)
+
+    # Assign IDs and probabilities to the PCA data using the components found above
+    pcasims.classify_species()
 
     # Rule-based analysis
     pcasims.perform_rule_based_analysis()

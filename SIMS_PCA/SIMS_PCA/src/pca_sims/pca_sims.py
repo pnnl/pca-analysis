@@ -26,6 +26,7 @@ class pca_sims(object):
         f_metadata: str,
         pcaDir: str,
         outDir: str,
+        positive_or_negative_ion: str
     ):
         print('\n-------->Reading Data...')
         # Read SIMS data
@@ -66,7 +67,6 @@ class pca_sims(object):
 
         self.f_rawsims_data         = f_rawsims_data
         self.f_metadata             = f_metadata
-        # self.f_group_name   = f_group_name
         self.pcaDir                 = pcaDir
         self.outDir                 = outDir
         self.description            = description
@@ -77,25 +77,18 @@ class pca_sims(object):
         self.nmass                  = nmass
         self.ncomp                  = ncomp
 
+        if positive_or_negative_ion == 'positive':
+            self.positive_ion = True
+        else:
+            self.positive_ion = False
+
         # Generate the output folder if it does not exist
         if not os.path.exists(os.path.join(pcaDir, outDir)):
             os.makedirs(os.path.join(pcaDir, outDir))
 
         # Initialize the mass identification
-        self.positive_mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
-        self.negative_mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
-        self.positive_mass_id['raw_mass'] = mass_raw
-        self.negative_mass_id['raw_mass'] = mass_raw
-
-        # TODO Change formatting so we can move over from obsolete train_data to positive/negative_doc_mass_record.csv
-        # TODO Add flexibility for either pos / neg ions (may need to move this code down to where we can use mass_id; plus, we we would
-        #      then be able to use this to calculate the uncertainty in the classifier from the actual data)
-        # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
-        self.classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv', self.positive_mass_id)
-        # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
-        self.rel_prob_matrix = self.classifier.calculate_probabilities()
-        # Save the top 3 potential candidates for each list.  We'll add them to the report later.
-        self.top_n_species = self.classifier.identify_top_n_species(3)
+        self.mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
+        self.mass_id['raw_mass'] = mass_raw
 
     
     # def perform_pca(self, max_pcacomp:int=5):
@@ -129,51 +122,49 @@ class pca_sims(object):
 
         self._get_loading_scores()
     
-    def identify_components_from_file(self, f:str, positive_ion=True):
+    def identify_components_from_file(self, f:str):
         """Identify chemical components from an existing file."""
         print('-------->Finding assigned unit mass from file: {}'.format(f))
         # Get the assigned unit mass
         doc_mass = pd.read_csv(f, index_col=0)
 
-        if positive_ion:
-            mass_id = self.positive_mass_id
-            self.positive_ion = True
-        else:
-            mass_id = self.negative_mass_id
-            self.positive_ion = False
-
-        for unit_mass in mass_id.index:
+        for unit_mass in self.mass_id.index:
             if unit_mass in doc_mass.index:
                 assignment    = doc_mass.loc[unit_mass, 'Assignment'].split(',')
                 assignment    = [assign.strip() for assign in assignment]
                 document_mass = doc_mass.loc[unit_mass, 'Document Mass'].split(',') 
                 document_mass = [float(mass) for mass in document_mass]
                 # if np.isnan(self.mass_id.loc[unit_mass, 'possible_assignment']):
-                if not isinstance(mass_id.loc[unit_mass, 'possible_assignment'], list):
-                    mass_id.at[unit_mass, 'possible_assignment'] = assignment
-                    mass_id.at[unit_mass, 'document_mass']       = document_mass
+                if not isinstance(self.mass_id.loc[unit_mass, 'possible_assignment'], list):
+                    self.mass_id.at[unit_mass, 'possible_assignment'] = assignment
+                    self.mass_id.at[unit_mass, 'document_mass']       = document_mass
                 else:
-                    mass_id.at[unit_mass, 'possible_assignment'] += assignment
-                    mass_id.at[unit_mass, 'document_mass']       += document_mass 
+                    self.mass_id.at[unit_mass, 'possible_assignment'] += assignment
+                    self.mass_id.at[unit_mass, 'document_mass']       += document_mass 
                 print('Identified unique mass {} from the documentation with Document Mass {} and assignment {}'.format(
                     unit_mass, document_mass, assignment))
-        
-        # TODO Remove
-        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        #     print("mass_id: ", mass_id)
 
-        if positive_ion:
-            self.positive_mass_id = mass_id
-        else:
-            self.negative_mass_id = mass_id
         # TODO Remove
-        print("positive_mass_id: ", self.positive_mass_id)
-        print("negative_mass_id: ", self.negative_mass_id)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print("mass_id: ", self.mass_id)
+
+
+    # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
+    def classify_species(self):
+        # TODO Change formatting so we can move over from obsolete train_data to positive/negative_doc_mass_record.csv
+        # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
+        self.classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv', self.mass_id)
+        # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
+        self.rel_prob_matrix = self.classifier.calculate_probabilities()
+        # Save (up to) the top 5 potential candidates for each list.  We'll add them to the report later.
+        self.top_n_species = self.classifier.identify_top_n_species(5)
+
 
     # TODO This method is pretty much empty and should be removed.
     def perform_rule_based_analysis(self):
         """Perform rule-based analysis to identify chemical components."""
         print('-------->Rule based analysis...')
+
 
     def plot_pca_result(
         self, 
@@ -191,7 +182,8 @@ class pca_sims(object):
         self.fig_scores_single_set = fig_scores_single_set
         self.fig_loading_set       = fig_loading_set
     
-    def generate_report(self, f_report='report.docx', max_pcacomp:int=5):
+
+    def generate_report(self, f_report:str='report.docx', max_pcacomp:int=5):
         """Generate the report"""
         print('-------->Generating the report now...')
 
@@ -205,23 +197,18 @@ class pca_sims(object):
         if self.positive_ion:
             # PCA analysis of positive ToF-SIMS spectra
             for pcacomp in range(1,max_pcacomp+1):
-                self.generate_analysis_pcacomp(pcacomp,positive_ion=True)
-
+                self.generate_analysis_pcacomp(pcacomp)
         else:
             # PCA analysis of negative ToF-SIMS spectra
             for pcacomp in range(1,max_pcacomp+1):
-                self.generate_analysis_pcacomp(pcacomp,positive_ion=False)
+                self.generate_analysis_pcacomp(pcacomp)
         
         # Save the report
         self.report.save()
     
-    def generate_analysis_pcacomp(self, pcacomp:int=1, positive_ion:bool=True):
+
+    def generate_analysis_pcacomp(self, pcacomp:int=1):
         """Generate the analysis for one pca component"""
-        # Get the mass_id
-        if positive_ion:
-            mass_id = self.positive_mass_id
-        else:
-            mass_id = self.negative_mass_id
 
         # ---------------- Plot pages ------------------
         score_plot = self.fig_scores_single_set[pcacomp-1]
@@ -279,7 +266,7 @@ class pca_sims(object):
 
         # ----------------- Detailed description --------------------
         # Get dominant ion categories
-        if positive_ion:
+        if self.positive_ion:
             signals = self._get_dominant_positive_ions(positive_loading_table, negative_loading_table, loadingTable_pcacomp)
         else:
             signals = self._get_dominant_negative_ions(positive_loading_table, negative_loading_table, loadingTable_pcacomp)
@@ -291,21 +278,23 @@ class pca_sims(object):
 
         # ----------------- Write the report -----------------------
         # Plot page
-        self.report.write_plot_page(pcacomp, positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
+        self.report.write_plot_page(pcacomp, self.positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
                                     positive_loading_table, negative_loading_table, signals)
 
         # Table page
-        self.report.write_table_page(pcacomp, positive_ion, positive_loading_table, negative_loading_table)
+        self.report.write_table_page(pcacomp, self.positive_ion, positive_loading_table, negative_loading_table)
 
         # Analysis page
-        self.report.write_analysis_page(pcacomp, positive_ion, 
+        self.report.write_analysis_page(pcacomp, self.positive_ion, 
                                         positive_loading_table, negative_loading_table, signals)
+
 
     def _get_loading_scores(self):
         self.loading_scores = self.pca.components_
         self.loadingTable   = pd.DataFrame(self.loading_scores.T,index=self.mass,
                                            columns=list(range(1, self.ncomp+1)))
-    
+
+
     def _get_dominant_positive_ions(self, p_loading_table, n_loading_table, all_loading_table):
         """Write the dominant positive ions to the report"""
         signals = {}
@@ -570,7 +559,8 @@ class pca_sims(object):
         measured_masses = []
 
 
-# Some useful helper methods included as part of this module.
+# ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
+
 def intersect(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
     return lst3

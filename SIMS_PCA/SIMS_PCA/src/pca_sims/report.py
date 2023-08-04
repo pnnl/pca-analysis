@@ -103,7 +103,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
+                document_add_assignment(p, assign, in_table=False)
                 p.add_run("), ")
         positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
         document.add_paragraph(", ".join(positive_dominant_ions), style="List Bullet") # ion categories
@@ -117,7 +117,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
+                document_add_assignment(p, assign, in_table=False)
                 p.add_run("), ")
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
@@ -170,7 +170,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
+                document_add_assignment(p, assign, in_table=False)
                 p.add_run("), ")
         p.add_run(", indicating they are more observed in high PC{0} score samples.".format(pcacomp))
 
@@ -181,7 +181,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
+                document_add_assignment(p, assign, in_table=False)
                 p.add_run("), ")
         p.add_run(", indicating they are more observed in high PC{0} score samples.".format(pcacomp))
 
@@ -198,7 +198,7 @@ class pca_sims_report(object):
                     p.add_run("m/z {} (-), ".format(unit_mass))
                 else:
                     p.add_run("m/z {} (".format(unit_mass))
-                    document_add_assignment(p, assign)
+                    document_add_assignment(p, assign, in_table=False)
                     p.add_run("), ")
 
             p.add_run(", are majorly found in positive loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
@@ -216,7 +216,7 @@ class pca_sims_report(object):
                     p.add_run("m/z {} (-), ".format(unit_mass))
                 else:
                     p.add_run("m/z {} (".format(unit_mass))
-                    document_add_assignment(p, assign)
+                    document_add_assignment(p, assign, in_table=False)
                     p.add_run("), ")
 
             p.add_run(", are majorly found in negative loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
@@ -277,8 +277,12 @@ def document_add_table(document:Document, df:pd.DataFrame):
                     t.cell(i+1,j).text = str(cur_group)
 
 
-# Parse strings representing the species assignments that we intend to add to a cell
-def document_add_assignment(p, assignment: list) -> None:
+# Parse strings representing the species assignments that we intend to add to a cell.
+#   Parameters:
+#   p - (docx paragraph) The paragraph to which we add text
+#   assignment - The list of items to add to the paragraph
+#   in_table - True means we use new line separators to add text to a table, False means we use comma separators to add text elsewhere
+def document_add_assignment(p, assignment:list, in_table:bool=True) -> None:
     n_assign = len(assignment)
     # For each chemical species assignment (expect assign to be a string)
     for j,assign in enumerate(assignment):
@@ -295,12 +299,15 @@ def document_add_assignment(p, assignment: list) -> None:
                 text = p.add_run(s)
                 text.font.subscript = True
             else:
-                text = p.add_run(s) 
+                text = p.add_run(s)
         # Add sign
         text = p.add_run(sign)
         text.font.superscript = True
-        # If not the last element, add a comma separator
-        if j != n_assign-1: p.add_run('\n')
+        # If not the last element, add a separator appropriate to the context (table or not in table)
+        if j != n_assign-1 and in_table:
+            p.add_run('\n')
+        elif j != n_assign-1:
+            p.add_run(', ')
         
 
 def create_element(name):

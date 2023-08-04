@@ -27,10 +27,10 @@ f_doc_negative_mass = os.path.join(pcaDir, "sims-data", "negative_doc_mass_recor
 
 # TODO Improve the end-user interface for changing the next two variables?
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'negative'
+positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_NEGATIVE_20020202_Zihua_soils.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_POSITIVE_20020202_Zihua_soils.TXT')
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')

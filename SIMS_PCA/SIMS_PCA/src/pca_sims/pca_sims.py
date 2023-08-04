@@ -86,9 +86,11 @@ class pca_sims(object):
         if not os.path.exists(os.path.join(pcaDir, outDir)):
             os.makedirs(os.path.join(pcaDir, outDir))
 
-        # Initialize the mass identification
+        # Initialize the mass identification; make sure to sort by the raw masses so we don't mess up the classification
+        # order when we write the report
         self.mass_id = pd.DataFrame(columns=['raw_mass', 'document_mass', 'true_assignment', 'possible_assignment'], index=mass)
         self.mass_id['raw_mass'] = mass_raw
+        self.mass_id.sort_values(by=['raw_mass'], inplace=True)
 
     
     # def perform_pca(self, max_pcacomp:int=5):
@@ -152,6 +154,7 @@ class pca_sims(object):
     # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
     def classify_species(self):
         # TODO Change formatting so we can move over from obsolete train_data to positive/negative_doc_mass_record.csv
+        # TODO Expose number of top n species in main.py?
         # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
         self.classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv', self.mass_id)
         # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)

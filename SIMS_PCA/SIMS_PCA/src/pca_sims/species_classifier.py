@@ -1,4 +1,4 @@
-"""This class allows us to assign a list of chemical species as a string given an input list of atomic weights."""
+"""This class allows us to calculate the most likely chemical species classifications from given input lists of reference and test atomic weights."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -99,11 +99,11 @@ class species_classifier:
             top_n_species_names = species_ref[ind_n]
             top_n_probs = np.round(row[ind_n], 3)
             # Add our list of 3 lists: n masses (float), n names (string), n probabilities (float)
-            # Ex:  [1.0073, 2.0152, 6.0146], ['H+', 'H2+', '6Li+'], [0.761, 0.239, 0.000]
+            # Ex:  [1.0073, 2.0152], ['H+', 'H2+'], [0.761, 0.239]
             top_n_list.append([list(top_n_ref_masses), list(top_n_species_names), list(top_n_probs)])
 
             row_index += 1
 
-        print("\n---------top_n_list: \n\n", top_n_list[20:50])
+        print("\n---------top_n_list: \n\n", top_n_list[:50])
 
         return top_n_list

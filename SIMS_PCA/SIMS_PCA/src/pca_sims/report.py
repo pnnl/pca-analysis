@@ -30,6 +30,7 @@ class pca_sims_report(object):
         # Title page
         self._create_title_page()
     
+    
     def _create_title_page(self):
         document = self.document
         document.add_heading("\t\tPCA-SIMS Spectra Analysis Report", 0)
@@ -61,6 +62,7 @@ class pca_sims_report(object):
             run = p.add_run('ToF-SIMS operator: {}'.format(description['operator']))
             run.font.size = Pt(14)
     
+
     def write_2dscore_plots(self, score2d_plots):
         document = self.document
 
@@ -73,7 +75,7 @@ class pca_sims_report(object):
         # Write the score plots
         for plots in score2d_plots:
             for plot in plots:
-                document.add_picture(plot, width=Inches(6.5))  # (6.5" Score plots + 0.625" margin + 0.625" margin = 8" total)
+                document.add_picture(plot, width=Inches(6))  # (6" Score plots + 0.625" margin + 0.625" margin = 7.5" total)
 
 
     def write_plot_page(self, pcacomp:int, positive_ion:bool, score_plot:str, loading_plot:str,
@@ -120,6 +122,7 @@ class pca_sims_report(object):
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
 
+
     # Writes a PCA loading table to the document. Columns are:
     # +/- loading | No. # | Unit Mass | Document Mass | Initial Peak Assignment | Measured Mass | Updated Peak Assignment
     def write_table_page(self, pcacomp:int, positive_ion:bool,
@@ -145,6 +148,7 @@ class pca_sims_report(object):
 
         # Write negative loading values ...
         document_add_table(document, n_loading_table)
+
 
     def write_analysis_page(self, pcacomp:int, positive_ion:bool, 
                             positive_loading_table:pd.DataFrame, negative_loading_table:pd.DataFrame, 
@@ -246,25 +250,25 @@ def document_add_table(document:Document, df:pd.DataFrame):
     for i in range(df.shape[0]):
         for j in range(df.shape[-1]):
             cur_entry = df.values[i,j]
-            # We expect each group to be either a nested list of lists or a single-depth list, which we handle with the if case here
-            if not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
+            # We expect each group to be either a nested list of lists or a single-depth list, which we handle with the if case here; if list is empty, also default to the 1st case
+            if not cur_entry or not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
                 group_size = 1
             else:
                 group_size = len(cur_entry)
 
             # Iterate over multiple sublists of the current dataframe entry, but only if it has a nested list structure
             for k in range(group_size):
-                if not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
+                if not cur_entry or not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
                     cur_group = cur_entry
                 else:
                     cur_group = cur_entry[k]
 
                 if str(cur_group) == 'nan':
                     t.cell(i+1,j).text = ''
-                elif isinstance(cur_group, list) and not is_float(cur_group[0]):
+                elif isinstance(cur_group, list) and (not cur_entry or not is_float(cur_group[0])):
                     p_species = t.cell(i+1,j).add_paragraph()
                     document_add_assignment(p_species, cur_group)
-                elif isinstance(cur_group, list) and is_float(cur_group[0]):
+                elif isinstance(cur_group, list) and (not cur_entry or is_float(cur_group[0])):
                     p_probs = t.cell(i+1,j).add_paragraph()
                     p_probs.add_run('\n'.join(map(str, cur_group)))
                 else:
@@ -296,8 +300,10 @@ def document_add_assignment(p, assignment: list) -> None:
         # If not the last element, add a comma separator
         if j != n_assign-1: p.add_run('\n')
         
+
 def create_element(name):
     return OxmlElement(name)
+
 
 def create_attribute(element, name, value):
     element.set(ns.qn(name), value)
@@ -317,6 +323,7 @@ def document_add_page_number(run):
     run._r.append(fldChar1)
     run._r.append(instrText)
     run._r.append(fldChar2)
+
 
 def is_float(element: Any) -> bool:
     try:

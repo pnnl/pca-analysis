@@ -88,7 +88,8 @@ class pca_sims(object):
         self.negative_mass_id['raw_mass'] = mass_raw
 
         # TODO Change formatting so we can move over from obsolete train_data to positive/negative_doc_mass_record.csv
-        # TODO Add flexibility for either pos / neg ions
+        # TODO Add flexibility for either pos / neg ions (may need to move this code down to where we can use mass_id; plus, we we would
+        #      then be able to use this to calculate the uncertainty in the classifier from the actual data)
         # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
         self.classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv', self.positive_mass_id)
         # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
@@ -290,17 +291,15 @@ class pca_sims(object):
 
         # ----------------- Write the report -----------------------
         # Plot page
-        # TODO Uncomment
-        # self.report.write_plot_page(pcacomp, positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
-        #                             positive_loading_table, negative_loading_table, signals)
+        self.report.write_plot_page(pcacomp, positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
+                                    positive_loading_table, negative_loading_table, signals)
 
         # Table page
         self.report.write_table_page(pcacomp, positive_ion, positive_loading_table, negative_loading_table)
 
-        # TODO Uncomment
         # Analysis page
-        # self.report.write_analysis_page(pcacomp, positive_ion, 
-        #                                 positive_loading_table, negative_loading_table, signals)
+        self.report.write_analysis_page(pcacomp, positive_ion, 
+                                        positive_loading_table, negative_loading_table, signals)
 
     def _get_loading_scores(self):
         self.loading_scores = self.pca.components_

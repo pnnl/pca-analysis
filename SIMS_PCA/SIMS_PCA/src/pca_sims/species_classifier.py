@@ -23,6 +23,19 @@ class species_classifier:
         np.random.seed(2)
         masses_test = data_test['raw_mass']
 
+        # TODO Implement uncertainty actually calculated from data
+        # Get approximate uncertainty of data
+        # a = data_test['raw_mass'].to_numpy()
+        # b = data_test['document_mass'].to_numpy()
+        # print("a: ", a)
+        # print("b: ", b)
+        # residues = a - b
+        # # residues = residues[residues != np.NaN]
+        # print(">>>>>>> Residues: ", residues)
+        # self.uncertainty = np.std(abs(residues))
+        # print(">>>>>>> Uncertainty: ", self.uncertainty)
+        self.uncertainty = 0.003
+
         self.test_size = test_size
         self.masses_ref = data_ref['Precise Mass']
         self.species_ref = data_ref['Species']
@@ -43,19 +56,12 @@ class species_classifier:
         print("\nPrecise_masses: \n", precise_masses)
         print("\nmasses_test: \n", masses_test)
 
-
-        # TODO Accuracy goes down from 100% --> 0% as this uncertainty gets too small. Possibly use:
-        #      1) More accurate uncertainties?
-        #      2) A warning / default classification when vector becomes all 0s ([0,0,0,0,...0])?
-        # Store uncertainty and unknown species to be classified
-        unc = 0.001
-
         # Calculate standard deviations and resulting probabilities for each mass according to its uncertainty pdf.
         # We transform the x_data from 1 x n to n x 1, then broadcast it to n x 48 while subtracting precise_masses and dividing
         # by the uncertainty to get the number of standard deviations each measured mass is from each of the 48 known species
         # masses, then use norm.cdf to convert to probabilities.
         prob_matrix = np.zeros((test_size,len(masses_ref)))
-        prob_matrix = (np.reshape(masses_test, (-1,1)) - precise_masses) / (1000 * unc)
+        prob_matrix = (np.reshape(masses_test, (-1,1)) - precise_masses) / (10 * self.uncertainty)
         prob_matrix = (norm.cdf(-abs(prob_matrix)))
 
         # Calculate relative probabilities by scaling row sum to 1
@@ -66,24 +72,34 @@ class species_classifier:
         return self.rel_prob_matrix
     
 
-    # Save a list of just the top n probabilities in each row of the probability matrix along with their corresponding species and reference document masses
+    # Save a list of just the top n probabilities in each row of the probability matrix along with their corresponding 
+    # species and reference document masses. However, we'll only keep elements that are within +/-0.5 of the Precise Mass
+    # value to ensure we aren't giving useless predictions, so there may be fewer than n elements.
     def identify_top_n_species(self, n):
-        masses_ref = self.masses_ref
-        species_ref = self.species_ref
+        masses_ref = self.masses_ref.to_numpy()
+        species_ref = self.species_ref.to_numpy()
+        masses_test = self.masses_test.to_numpy()
         rel_prob_matrix = self.rel_prob_matrix
         top_n_list = []
 
+        # Increment that tells us which test mass to compare with our precise masses each loop
+        row_index = 0
         # Round probabilities to 3 decimal places for succinctness later and order probabilities from greatest to least
         for row in rel_prob_matrix:
+            # Get the indices of the most likely candidates in decreasing order of probability; throw out candidates too far away from the target
             ind_n = np.flip(np.argsort(row)[-n:])
+            ind_n = ind_n[abs(masses_ref[ind_n] - masses_test[row_index]) < 0.5]
+
             top_n_ref_masses = masses_ref[ind_n]
             top_n_species_names = species_ref[ind_n]
             top_n_probs = np.round(row[ind_n], 3)
-            # Add our tuple of 3 lists: n masses (float), n names (string), n probabilities (float)
+            # Add our list of 3 lists: n masses (float), n names (string), n probabilities (float)
             # Ex:  [1.0073, 2.0152, 6.0146], ['H+', 'H2+', '6Li+'], [0.761, 0.239, 0.000]
             top_n_list.append([list(top_n_ref_masses), list(top_n_species_names), list(top_n_probs)])
 
-        print("\n---------top_n_list: \n\n", top_n_list[0:6])
+            row_index += 1
+
+        print("\n---------top_n_list: \n\n", top_n_list[20:50])
 
         return top_n_list
 

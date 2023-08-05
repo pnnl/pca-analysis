@@ -99,11 +99,13 @@ class pca_sims_report(object):
         p = document.add_paragraph("", style="List Bullet")
         for index in positive_loading_table.index:
             unit_mass, assign = positive_loading_table.loc[index, "Unit Mass"], positive_loading_table.loc[index, "Initial Peak Assignment"]
+            # TODO Remove trailing comma + space (, ) after last set of assignments here for polish
+            # TODO Create a helper method to encapsulate this boilerplate (it's repeated 6 times)
             if str(assign) == 'nan':
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign, in_table=False)
+                document_add_assignment(p, assign)
                 p.add_run("), ")
         positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
         document.add_paragraph(", ".join(positive_dominant_ions), style="List Bullet") # ion categories
@@ -117,7 +119,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign, in_table=False)
+                document_add_assignment(p, assign)
                 p.add_run("), ")
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
@@ -170,7 +172,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign, in_table=False)
+                document_add_assignment(p, assign)
                 p.add_run("), ")
         p.add_run(", indicating they are more observed in high PC{0} score samples.".format(pcacomp))
 
@@ -181,7 +183,7 @@ class pca_sims_report(object):
                 p.add_run("m/z {} (-), ".format(unit_mass))
             else:
                 p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign, in_table=False)
+                document_add_assignment(p, assign)
                 p.add_run("), ")
         p.add_run(", indicating they are more observed in high PC{0} score samples.".format(pcacomp))
 
@@ -198,10 +200,10 @@ class pca_sims_report(object):
                     p.add_run("m/z {} (-), ".format(unit_mass))
                 else:
                     p.add_run("m/z {} (".format(unit_mass))
-                    document_add_assignment(p, assign, in_table=False)
+                    document_add_assignment(p, assign)
                     p.add_run("), ")
 
-            p.add_run(", are majorly found in positive loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
+            p.add_run(", are mostly found in positive loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
         
         for ion_type in negative_dominant_ions:
             dominant_mass = ion_signals[ion_type]['top_ion_list']
@@ -216,10 +218,10 @@ class pca_sims_report(object):
                     p.add_run("m/z {} (-), ".format(unit_mass))
                 else:
                     p.add_run("m/z {} (".format(unit_mass))
-                    document_add_assignment(p, assign, in_table=False)
+                    document_add_assignment(p, assign)
                     p.add_run("), ")
 
-            p.add_run(", are majorly found in negative loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
+            p.add_run(", are mostly found in negative loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
     
     def save(self):
         # TODO: Generate table of contents
@@ -269,7 +271,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                     t.cell(i+1,j).text = ''
                 elif isinstance(cur_group, list) and (not cur_entry or not is_float(cur_group[0])):
                     p_species = t.cell(i+1,j).add_paragraph()
-                    document_add_assignment(p_species, cur_group)
+                    document_add_assignment(p_species, cur_group, in_table=True)
                 elif isinstance(cur_group, list) and (not cur_entry or is_float(cur_group[0])):
                     p_probs = t.cell(i+1,j).add_paragraph()
                     p_probs.add_run('\n'.join(map(str, cur_group)))
@@ -282,7 +284,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
 #   p - (docx paragraph) The paragraph to which we add text
 #   assignment - The list of items to add to the paragraph
 #   in_table - True means we use new line separators to add text to a table, False means we use comma separators to add text elsewhere
-def document_add_assignment(p, assignment:list, in_table:bool=True) -> None:
+def document_add_assignment(p, assignment:list, in_table:bool=False) -> None:
     n_assign = len(assignment)
     # For each chemical species assignment (expect assign to be a string)
     for j,assign in enumerate(assignment):

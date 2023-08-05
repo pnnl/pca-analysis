@@ -24,6 +24,7 @@ class pca_sims(object):
         self,
         f_rawsims_data: str,
         f_metadata: str,
+        f_doc_mass: str,
         pcaDir: str,
         outDir: str,
         positive_or_negative_ion: str
@@ -92,6 +93,9 @@ class pca_sims(object):
         self.mass_id['raw_mass'] = mass_raw
         self.mass_id.sort_values(by=['raw_mass'], inplace=True)
 
+        # Get the unit mass assignments from the chosen .csv document
+        self.doc_mass = pd.read_csv(f_doc_mass, index_col=0)
+
     
     # def perform_pca(self, max_pcacomp:int=5):
     def perform_pca(self):
@@ -124,11 +128,26 @@ class pca_sims(object):
 
         self._get_loading_scores()
     
-    def identify_components_from_file(self, f:str):
-        """Identify chemical components from an existing file."""
-        print('-------->Finding assigned unit mass from file: {}'.format(f))
-        # Get the assigned unit mass
-        doc_mass = pd.read_csv(f, index_col=0)
+
+    # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
+    def classify_species(self, doc_mass_list, species_list):
+        # TODO Expose number of top n species in main.py?
+        # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
+        self.classifier = species_classifier(self.mass_id, doc_mass_list, species_list)
+        # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
+        self.rel_prob_matrix = self.classifier.calculate_probabilities()
+        # Save (up to) the top 5 potential candidates for each list.  We'll add them to the report later.
+        self.top_n_species = self.classifier.identify_top_n_species(5)
+
+
+    """Identify chemical components from the file passed to pca_sims."""
+    def identify_components_from_file(self):
+        print('-------->Finding assigned unit mass from file...')
+        doc_mass = self.doc_mass
+
+        # Store the possible assignments and document masses in a 1d list to get them in a format easily used by species_classifier later
+        doc_mass_list = []
+        species_list = []
 
         for unit_mass in self.mass_id.index:
             if unit_mass in doc_mass.index:
@@ -142,30 +161,24 @@ class pca_sims(object):
                     self.mass_id.at[unit_mass, 'document_mass']       = document_mass
                 else:
                     self.mass_id.at[unit_mass, 'possible_assignment'] += assignment
-                    self.mass_id.at[unit_mass, 'document_mass']       += document_mass 
+                    self.mass_id.at[unit_mass, 'document_mass']       += document_mass
                 print('Identified unique mass {} from the documentation with Document Mass {} and assignment {}'.format(
                     unit_mass, document_mass, assignment))
+
+                doc_mass_list.extend(document_mass)
+                species_list.extend(assignment)
 
         # TODO Remove
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print("mass_id: ", self.mass_id)
 
-
-    # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
-    def classify_species(self):
-        # TODO Change formatting so we can move over from obsolete train_data to positive/negative_doc_mass_record.csv
-        # TODO Expose number of top n species in main.py?
-        # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
-        self.classifier = species_classifier('SIMS_PCA/SIMS_PCA/src/train_data.csv', self.mass_id)
-        # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
-        self.rel_prob_matrix = self.classifier.calculate_probabilities()
-        # Save (up to) the top 5 potential candidates for each list.  We'll add them to the report later.
-        self.top_n_species = self.classifier.identify_top_n_species(5)
+        # Assign IDs and probabilities to the PCA data using the components found above
+        self.classify_species(doc_mass_list, species_list)
 
 
     # TODO This method is pretty much empty and should be removed.
+    # Perform rule-based analysis to identify chemical components.
     def perform_rule_based_analysis(self):
-        """Perform rule-based analysis to identify chemical components."""
         print('-------->Rule based analysis...')
 
 

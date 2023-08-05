@@ -10,26 +10,25 @@ class species_classifier:
 
     # Constructor; takes the following parameters:
     #       data - The mass vs. species data (either positive or negative ions)
-    def __init__(self, data_ref, data_test):
-        data_ref = pd.read_csv(data_ref)
-
+    def __init__(self, data:pd.DataFrame, doc_mass_list, species_list):
         # Get how many masses need to be tested
-        test_size = data_test.shape[0]
+        test_size = data.shape[0]
         # Get how many classes we need from the original data
-        output_dim = data_ref.shape[0]
+        output_dim = data.shape[0]
         print("Num output classes: ", output_dim)
 
         self.test_size = test_size
-        self.masses_ref = data_ref['Precise Mass'].to_numpy()
-        self.species_ref = data_ref['Species'].to_numpy()
-        self.masses_test = data_test['raw_mass'].to_numpy()
-        self.masses_document = data_test['document_mass'].to_numpy()
+        print(doc_mass_list)
+        print(species_list)
+        self.masses_document = np.array(doc_mass_list)
+        self.species_document = np.array(species_list)
+        self.masses_test = data['raw_mass'].to_numpy()
 
         # Get approximate uncertainty from the data by comparing the test and document masses in the mass id file (data_test). We can exclude
         # the document masses that have multiple potential classifications since they might artificially inflate the uncertainty depending on
         # which one we select.
         a = self.masses_test
-        b = self.masses_document
+        b = data['document_mass'].to_numpy()
 
         for i in range(len(b)):
             if type(b[i]) != list:
@@ -50,13 +49,13 @@ class species_classifier:
     # Returns: a matrix with each row representing the sample number and the columns in each row containing the probabilities. 
     #          All entries in a row add to a total probability of 1.
     def calculate_probabilities(self):
-        masses_ref = self.masses_ref
+        masses_document = self.masses_document
         masses_test = self.masses_test
         test_size = self.test_size
         
         # Make the known species masses into a row, then repeat for the length of the training data to prepare for mass array operations
         # in the next cell
-        precise_masses = np.reshape(masses_ref, (1,-1))
+        precise_masses = np.reshape(masses_document, (1,-1))
         precise_masses = precise_masses.repeat(test_size,0)
         print("\nPrecise_masses: \n", precise_masses)
         print("\nmasses_test: \n", masses_test)
@@ -65,7 +64,7 @@ class species_classifier:
         # We transform the x_data from 1 x n to n x 1, then broadcast it to n x 48 while subtracting precise_masses and dividing
         # by the uncertainty to get the number of standard deviations each measured mass is from each of the 48 known species
         # masses, then use norm.cdf to convert to probabilities.
-        prob_matrix = np.zeros((test_size,len(masses_ref)))
+        prob_matrix = np.zeros((test_size,len(masses_document)))
         prob_matrix = (np.reshape(masses_test, (-1,1)) - precise_masses) / (self.uncertainty)
         prob_matrix = (norm.cdf(-abs(prob_matrix)))
 
@@ -81,8 +80,8 @@ class species_classifier:
     # species and reference document masses. However, we'll only keep elements that are within +/-0.5 of the Precise Mass
     # value to ensure we aren't giving useless predictions, so there may be fewer than n elements.
     def identify_top_n_species(self, n):
-        masses_ref = self.masses_ref
-        species_ref = self.species_ref
+        masses_document = self.masses_document
+        species_document = self.species_document
         masses_test = self.masses_test
         rel_prob_matrix = self.rel_prob_matrix
         top_n_list = []
@@ -93,10 +92,10 @@ class species_classifier:
         for row in rel_prob_matrix:
             # Get the indices of the most likely candidates in decreasing order of probability; throw out candidates too far away from the target
             ind_n = np.flip(np.argsort(row)[-n:])
-            ind_n = ind_n[abs(masses_ref[ind_n] - masses_test[row_index]) < 0.5]
+            ind_n = ind_n[abs(masses_document[ind_n] - masses_test[row_index]) < 0.5]
 
-            top_n_ref_masses = masses_ref[ind_n]
-            top_n_species_names = species_ref[ind_n]
+            top_n_ref_masses = masses_document[ind_n]
+            top_n_species_names = species_document[ind_n]
             top_n_probs = np.round(row[ind_n], 3)
             # Add our list of 3 lists: n masses (float), n names (string), n probabilities (float)
             # Ex:  [1.0073, 2.0152], ['H+', 'H2+'], [0.761, 0.239]

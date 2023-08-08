@@ -2,12 +2,6 @@
 
 import os
 import sys
-import numpy as np
-import pandas as pd
-from sklearn import preprocessing
-import matplotlib.pyplot as plt
-import matplotlib.pylab as pylab
-from matplotlib import patches
 import logging
 # Disable matplotlib font logging (it outputs unnecessary info about missing fonts)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
@@ -30,6 +24,9 @@ f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_NEGATIVE_2002
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
+
+# SIMS-PCA report
+f_report = os.path.join(pcaDir, 'output_sample/report.docx')
 
 # Document positive and negative mass
 f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")
@@ -57,7 +54,7 @@ do_update = input('-------->Would you like to update values using measured masse
 if do_update.strip() == 'y':
     print('-------->Updating Peak Assignments Using Measured Masses...')
 
-    pcasims.update_classifications(positive_or_negative_ion)
+    pcasims.update_classifications(f_doc_mass, f_report)
 
     print('-------->Done.')
 else:
@@ -75,7 +72,7 @@ else:
     pcasims.plot_pca_result()
 
     # Generate the report
-    pcasims.generate_report()
+    pcasims.generate_report(f_report=f_report)
 
     print('-------->Data Exporting...')
     print('\n\n\n-------->Congratulations!')

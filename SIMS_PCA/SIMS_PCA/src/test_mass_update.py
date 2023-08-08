@@ -9,7 +9,6 @@ report = docx.Document('SIMS_PCA/SIMS_PCA/output_sample/report.docx')
 # Set the indices of the document DataFrame to the Unit Masses for ease of access
 doc.set_index(doc['Unit Mass'], inplace=True)
 
-# TODO Maybe store all data in one DataFrame?
 # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
 # duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
 # a place without possible duplicates.
@@ -21,7 +20,7 @@ for table in report.tables:
         # Ignore the header at the top of the column and rows without any updates
         # Index 2 is Unit Mass, index 6 is Measured Mass, and index 7 is Updated Peak Assignment
         if not ('loading' in row.cells[0].text) and (row.cells[6].text.strip() or row.cells[7].text.strip()):
-            cur_unit_mass = row.cells[2].text.strip()
+            cur_unit_mass = int(row.cells[2].text.strip())
             cur_measured_mass = row.cells[6].text.strip()
             cur_updated_peak_assignment = row.cells[7].text.strip()
             
@@ -36,11 +35,17 @@ for table in report.tables:
             #         In this case, just find the corresponding slot in the (ordered?) 'Unit Mass' column of the doc. Then, insert a new entry.
             # Shouldn't ever have to write to 'Measured Mass' or 'Updated Peak Assignment' columns
             if (cur_measured_mass and not cur_updated_peak_assignment):
-                doc.at[cur_unit_mass,'Document Mass'] = cur_measured_mass   # TODO Why is this just adding a new row?
+                doc.at[cur_unit_mass,'Document Mass'] = cur_measured_mass
             elif (cur_measured_mass and cur_updated_peak_assignment):
-                if (True):
-                    pass
-                elif (False):
-                    pass
+                if (cur_unit_mass in doc.index):
+                    doc.at[cur_unit_mass,'Assignment'] = cur_updated_peak_assignment
+                    doc.at[cur_unit_mass,'Document Mass'] = cur_measured_mass
+                else:
+                    doc.loc[cur_unit_mass] = [cur_unit_mass, cur_updated_peak_assignment, cur_measured_mass]
 
+# Ensure unit masses are integers and that our Dataframe is sorted before writing it to the given file
+doc['Unit Mass'] = doc['Unit Mass'].astype(int)
+doc.sort_index(inplace=True)
 print(doc)
+
+doc.to_csv('SIMS_PCA/SIMS_PCA/sims-data/negative_doc_mass_record.csv', index=False)

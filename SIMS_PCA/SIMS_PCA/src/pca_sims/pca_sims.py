@@ -1,17 +1,16 @@
 """The class for performing PCA analysis on SIMS data."""
 
-from ast import AsyncFunctionDef
 import os
 import sys
 import traceback
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
+import docx
 
 from .species_classifier import species_classifier
 from .plotting import plot_pca_result
 from .report import pca_sims_report
-import time
 
 
 positive_ion_category = ["Hydrocarbon", "Oxygen-containing organics", "Nitrogen-containing organics", "Benzene-containing organics", "PDMS"]
@@ -569,12 +568,61 @@ class pca_sims(object):
         return signals
 
     
-    # TODO Add code from test.py here once it has been tested out for a few lines using the model.
     # Update the assignment documents using user-entered masses and the peak assignments
     # Parameters:
     #   positive_or_negative_ion - Distinguishes whether to update positive_doc_mass_record.csv (if = 'positive') or negative_doc_mass_record.csv (if = 'negative')
-    def update_classifications(self, positive_or_negative_ion:str):
-        measured_masses = []
+    def update_classifications(self, f_doc_mass:str, f_report:str):
+        doc_mass = pd.read_csv(f_doc_mass)
+        doc_mass.set_index(doc_mass['Unit Mass'], inplace=True)
+        report = docx.Document(f_report)
+
+        # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
+        # duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
+        # a place without possible duplicates.
+
+        # Iterate over all tables in document
+        for table in report.tables:
+            # Iterate over all rows in table
+            for row in table.rows:
+                # Ignore the header at the top of the column and rows without any updates
+                # Index 2 is Unit Mass, index 6 is Measured Mass, and index 7 is Updated Peak Assignment
+                if not ('loading' in row.cells[0].text) and (row.cells[6].text.strip() or row.cells[7].text.strip()):
+                    cur_unit_mass = int(row.cells[2].text.strip())
+                    cur_measured_mass = row.cells[6].text.strip()
+                    cur_updated_peak_assignment = row.cells[7].text.strip()
+                    
+                    # print(cur_unit_mass, cur_measured_mass, cur_updated_peak_assignment)
+
+                    # In each row of the table, we should act on one of a few cases:
+                    # Case 1) The user only entered a new mass for a classification that already exist in the document.
+                    #         In this case, we just find the corresponding 'Unit Mass' in the document and update its 'Document Mass'
+                    # Case 2) The user entered both a new mass and a new classification that already exist in the document.
+                    #         In this case, we find the corresponding 'Unit Mass' in the document and update its 'Assignment' and 'Document Mass'
+                    # Case 3) The user entered both a new mass and a new classification that don't exist.
+                    #         In this case, just find the corresponding slot in the (ordered?) 'Unit Mass' column of the doc. Then, insert a new entry.
+                    # Case 4) None of the above cases was satisfied, meaning that the user made an error in their data entry which they must fix, so we throw an error.
+                    # Note that we don't ever have to write to 'Measured Mass' or 'Updated Peak Assignment' columns
+                    if (cur_measured_mass and not cur_updated_peak_assignment and (cur_unit_mass in doc_mass.index)):
+                        doc_mass.at[cur_unit_mass,'Document Mass'] = cur_measured_mass
+                    elif (cur_measured_mass and cur_updated_peak_assignment):
+                        if (cur_unit_mass in doc_mass.index):
+                            doc_mass.at[cur_unit_mass,'Assignment'] = cur_updated_peak_assignment
+                            doc_mass.at[cur_unit_mass,'Document Mass'] = cur_measured_mass
+                        else:
+                            doc_mass.loc[cur_unit_mass] = [cur_unit_mass, cur_updated_peak_assignment, cur_measured_mass]
+                    else:
+                        print('***Error! Invalid data update. Check each of your mass entries to ensure that either 1) you entered only a measured mass for an entry that already ' +
+                              'exists, 2) you entered both a new measured mass and peak assignment for an entry that already exists, or 3) you entered both a new measured mass ' +
+                              'and peak assignment for an entry that does not yet exist.***')
+                        sys.exit()
+
+        # Ensure unit masses are integers and that our Dataframe is sorted before writing it to the given file
+        doc_mass['Unit Mass'] = doc_mass['Unit Mass'].astype(int)
+        doc_mass.sort_index(inplace=True)
+        print(doc_mass)
+
+        # Write updated document masses to file
+        doc_mass.to_csv(f_doc_mass, index=False)
 
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------

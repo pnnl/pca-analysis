@@ -576,8 +576,6 @@ class pca_sims(object):
     def update_classifications(self, positive_or_negative_ion:str):
         measured_masses = []
 
-        if
-
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
 

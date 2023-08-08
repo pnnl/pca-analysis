@@ -245,11 +245,11 @@ class pca_sims(object):
         positive_loading_table=pd.DataFrame(
             data={"+ loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more, "Updated Probabilities":[" "]*fetchn_more,})
+                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
             data={"- loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more, "Updated Probabilities":[" "]*fetchn_more,})
+                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         
         # TODO This is where we need to change the tables that get put into the document; need to edit 'Document Mass' and 'Initial Peak Assignment' columns to look like:
         #           6.0146, 2.0152, 1.0073, 6Li+, H2+, H+, 4.20e-07, 0.239, 0.761
@@ -274,7 +274,7 @@ class pca_sims(object):
         
         med=pd.DataFrame(data={"+ loading":["- loading"],"No. #":["No. #"],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
                                "Initial Peak Assignment":["Initial Peak Assignment"], "Initial Probabilities":["Initial Probabilities"], 
-                               "Measured Mass":["Measured Mass"], "Updated Peak assignment":["Updated Peak assignment"], "Updated Probabilities":["Updated Probabilities"],})
+                               "Measured Mass":["Measured Mass"], "Updated Peak assignment":["Updated Peak assignment"]})
 
         loading_table = pd.concat([positive_loading_table, med, negative_loading_table])
 
@@ -570,9 +570,13 @@ class pca_sims(object):
 
     
     # TODO Add code from test.py here once it has been tested out for a few lines using the model.
-    def update_classifications(self):
-        """Update the masses and the peak assigntments using data the user has entered into the"""
+    # Update the assignment documents using user-entered masses and the peak assignments
+    # Parameters:
+    #   positive_or_negative_ion - Distinguishes whether to update positive_doc_mass_record.csv (if = 'positive') or negative_doc_mass_record.csv (if = 'negative')
+    def update_classifications(self, positive_or_negative_ion:str):
         measured_masses = []
+
+        if
 
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------

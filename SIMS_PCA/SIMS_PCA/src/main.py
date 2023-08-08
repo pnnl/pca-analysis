@@ -21,9 +21,15 @@ pcaDir = "/home/cswelch/pca/SIMS_PCA/SIMS_PCA"
 # Output folder
 outDir = os.path.join(pcaDir, 'output_sample')
 
-# TODO Improve the end-user interface for changing the next two variables?
+# TODO Improve the end-user interface for positive_or_negative_ion, f_rawsims_data, and f_metadata?
 # Indicates to rest of code whether we are handling positive or negative ions
 positive_or_negative_ion = 'negative'
+
+# SIMS data
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_NEGATIVE_20020202_Zihua_soils.TXT')
+
+# SIMS metadata
+f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
 # Document positive and negative mass
 f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")
@@ -38,12 +44,6 @@ else:
     print('***Error! Invalid input for positive_or_negative_ion; choose \'positive\' or \'negative\'***')
     sys.exit()
 
-# SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_NEGATIVE_20020202_Zihua_soils.TXT')
-
-# SIMS metadata
-f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
-
 # Initialize the pca_sims instance
 pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, positive_or_negative_ion)
 
@@ -57,7 +57,7 @@ do_update = input('-------->Would you like to update values using measured masse
 if do_update.strip() == 'y':
     print('-------->Updating Peak Assignments Using Measured Masses...')
 
-    pcasims.update_classifications()
+    pcasims.update_classifications(positive_or_negative_ion)
 
     print('-------->Done.')
 else:

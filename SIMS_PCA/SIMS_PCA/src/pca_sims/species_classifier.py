@@ -10,11 +10,14 @@ class species_classifier:
 
     # Constructor; takes the following parameters:
     #       data - The mass vs. species data (either positive or negative ions)
-    def __init__(self, data:pd.DataFrame, doc_mass_list, species_list):
+    def __init__(self, data:pd.DataFrame, doc_mass_list:list, species_list:list):
+        # TODO Find a more efficient way of not altering the original DataFrame
+        self.data = data.copy(deep=True)
+        
         # Get how many masses need to be tested
-        test_size = data.shape[0]
+        test_size = self.data.shape[0]
         # Get how many classes we need from the original data
-        output_dim = data.shape[0]
+        output_dim = self.data.shape[0]
         print("Num output classes: ", output_dim)
 
         self.test_size = test_size
@@ -22,13 +25,13 @@ class species_classifier:
         print(species_list)
         self.masses_document = np.array(doc_mass_list)
         self.species_document = np.array(species_list)
-        self.masses_test = data['raw_mass'].to_numpy()
+        self.masses_test = self.data['raw_mass'].to_numpy()
 
         # Get approximate uncertainty from the data by comparing the test and document masses in the mass id file (data_test). We can exclude
         # the document masses that have multiple potential classifications since they might artificially inflate the uncertainty depending on
         # which one we select.
         a = self.masses_test
-        b = data['document_mass'].to_numpy()
+        b = self.data['document_mass'].to_numpy()
 
         for i in range(len(b)):
             if type(b[i]) != list:
@@ -42,8 +45,8 @@ class species_classifier:
         residues = residues[~pd.isnull(residues)]
         print(">>>>>>> Residues: ", residues)
         self.uncertainty = np.std(abs(residues))
+        # self.uncertainty = 0.03
         print(">>>>>>> Uncertainty: ", self.uncertainty)
-        # self.uncertainty = 0.003
 
     # Read the data, form representative Gaussian distributions around each peak, 
     # Returns: a matrix with each row representing the sample number and the columns in each row containing the probabilities. 
@@ -86,6 +89,7 @@ class species_classifier:
         rel_prob_matrix = self.rel_prob_matrix
         top_n_list = []
 
+        # TODO Also cut off species with probability less than 1%
         # Increment that tells us which test mass to compare with our precise masses each loop
         row_index = 0
         # Round probabilities to 3 decimal places for succinctness later and order probabilities from greatest to least

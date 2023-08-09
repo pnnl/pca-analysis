@@ -154,7 +154,6 @@ class pca_sims(object):
                 assignment    = [assign.strip() for assign in assignment]
                 document_mass = doc_mass.loc[unit_mass, 'Document Mass'].split(',') 
                 document_mass = [float(mass) for mass in document_mass]
-                # if np.isnan(self.mass_id.loc[unit_mass, 'possible_assignment']):
                 if not isinstance(self.mass_id.loc[unit_mass, 'possible_assignment'], list):
                     self.mass_id.at[unit_mass, 'possible_assignment'] = assignment
                     self.mass_id.at[unit_mass, 'document_mass']       = document_mass
@@ -568,6 +567,14 @@ class pca_sims(object):
         return signals
 
     
+    # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
+        # duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
+        # a place without possible duplicates.
+    # TODO Do we need to update the raw masses?
+    # TODO Fix Measured Mass and Updated Peak Assignment columns aligning cell text to top instead of bottom border
+    # TODO Only works for 1 updated assignment. Do we need to allow for updated assignments to have 2, 3, or more possibilities?
+    # TODO DON'T overwrite old species classifications; add to the end of the string entry
+    # TODO Implement selectable data files from subset of 000-099
     # Update the assignment documents using user-entered masses and the peak assignments
     # Parameters:
     #   positive_or_negative_ion - Distinguishes whether to update positive_doc_mass_record.csv (if = 'positive') or negative_doc_mass_record.csv (if = 'negative')
@@ -575,10 +582,6 @@ class pca_sims(object):
         doc_mass = pd.read_csv(f_doc_mass)
         doc_mass.set_index(doc_mass['Unit Mass'], inplace=True)
         report = docx.Document(f_report)
-
-        # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
-        # duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
-        # a place without possible duplicates.
 
         # Iterate over all tables in document
         for table in report.tables:

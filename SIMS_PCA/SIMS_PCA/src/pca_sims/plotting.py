@@ -80,6 +80,8 @@ def plot_pca_result(
     pca_data=pca_data[:,:max_pcacomp]
     pca_df=pd.DataFrame(pca_data,index=samplelist,columns=labels)
 
+    # TODO What if users use a different format for their group name labels (e.g., S479_P2)?  Should we account for the different characters to split on, such as underscores?
+    # What about characters at the start, like the s here, that make x not an integer?
     # FETCH GROUP LABEL
     print('-------->Score Plot and Confidence Ellipse Drawing...')
     '''

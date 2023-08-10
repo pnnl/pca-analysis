@@ -20,7 +20,7 @@ outDir = os.path.join(pcaDir, 'output_sample')
 positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/DATA_POSITIVE_20020202_Zihua_soils.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')

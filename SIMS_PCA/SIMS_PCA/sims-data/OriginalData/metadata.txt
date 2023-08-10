@@ -1,22 +1,11 @@
-Experiment,Soil Carbon Cycling/Lignin
-Date,20221123/20230207
-Operator,Ping Chen
-Ion,positive
-01,Sample-055
-02,Sample-056
-03,Sample-057
-04,Sample-058
-05,Sample-059
-06,Sample-060
-07,Sample-061
-08,Sample-062
-09,Sample-063
-10,Sample-064
-11,Sample-065
-12,Sample-066
-13,Sample-067
-14,Sample-068
-15,Sample-069
-16,Sample-070
-17,Sample-071
-18,Sample-072
+Experiment,Hifh P
+Date,20230810
+Operator,Chris Pasture
+01,Sample-479
+02,Sample-480
+03,Sample-482
+04,Sample-483
+05,Sample-484
+06,Sample-489
+07,Sample-490
+08,Sample-491

@@ -279,6 +279,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                     t.cell(i+1,j).text = str(cur_group)
 
 
+# TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)
 # Parse strings representing the species assignments that we intend to add to a cell.
 #   Parameters:
 #   p - (docx paragraph) The paragraph to which we add text

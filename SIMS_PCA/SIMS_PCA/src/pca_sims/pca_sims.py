@@ -576,15 +576,18 @@ class pca_sims(object):
         for table in report.tables:
             # Iterate over all rows in table
             for row in table.rows:
+                # TODO Update these conditions with the doc mass index (i.e., 3)
                 # Ignore the header at the top of the column and rows without any updates
-                # Index 2 is Unit Mass, index 6 is Measured Mass, and index 7 is Updated Peak Assignment
+                # Index 2 is Unit Mass, index 3 is Document Mass, index 6 is Measured Mass, and index 7 is Updated Peak Assignment
                 if not ('loading' in row.cells[0].text) and (row.cells[6].text.strip() or row.cells[7].text.strip()):
                     cur_unit_mass = int(row.cells[2].text.strip())
+                    cur_doc_mass = row.cells[3].text.strip()
                     cur_measured_mass = row.cells[6].text.strip()
                     cur_updated_peak_assignment = row.cells[7].text.strip()
                     
                     # print(cur_unit_mass, cur_measured_mass, cur_updated_peak_assignment)
 
+                    # TODO Need to fix so cases catch updating existing masses by adding a few decimal places.. (??)
                     # In each row of the table, we should act on one of a few cases:
                     # Case 1) The user only entered a new mass for a classification that already exist in the document.
                     #         In this case, we just find the corresponding 'Unit Mass' in the document and update its 'Document Mass'
@@ -594,14 +597,14 @@ class pca_sims(object):
                     #         In this case, just find the corresponding slot in the (ordered?) 'Unit Mass' column of the doc. Then, insert a new entry.
                     # Case 4) None of the above cases was satisfied, meaning that the user made an error in their data entry which they must fix, so we throw an error.
                     # Note that we don't ever have to write to 'Measured Mass' or 'Updated Peak Assignment' columns
-                    if (cur_measured_mass and not cur_updated_peak_assignment and (cur_unit_mass in doc_mass.index)):
-                        doc_mass.at[cur_unit_mass,'Document Mass'] = cur_measured_mass
-                    elif (cur_measured_mass and cur_updated_peak_assignment):
+                    if (cur_doc_mass and not cur_updated_peak_assignment and (cur_unit_mass in doc_mass.index)):
+                        doc_mass.at[cur_unit_mass,'Document Mass'] = cur_doc_mass
+                    elif (cur_doc_mass and cur_updated_peak_assignment):
                         if (cur_unit_mass in doc_mass.index):
                             doc_mass.at[cur_unit_mass,'Assignment'] = cur_updated_peak_assignment
-                            doc_mass.at[cur_unit_mass,'Document Mass'] = cur_measured_mass
+                            doc_mass.at[cur_unit_mass,'Document Mass'] = cur_doc_mass
                         else:
-                            doc_mass.loc[cur_unit_mass] = [cur_unit_mass, cur_updated_peak_assignment, cur_measured_mass]
+                            doc_mass.loc[cur_unit_mass] = [cur_unit_mass, cur_updated_peak_assignment, cur_doc_mass]
                     else:
                         print('***Error! Invalid data update. Check each of your mass entries to ensure that either 1) you entered only a measured mass for an entry that already ' +
                               'exists, 2) you entered both a new measured mass and peak assignment for an entry that already exists, or 3) you entered both a new measured mass ' +

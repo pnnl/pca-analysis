@@ -17,10 +17,10 @@ outDir = os.path.join(pcaDir, 'output_sample')
 
 # TODO Improve the end-user interface for positive_or_negative_ion, f_rawsims_data, and f_metadata?
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'positive'
+positive_or_negative_ion = 'negative'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Negative.TXT')
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
@@ -52,7 +52,7 @@ do_update = input('-------->Would you like to update values using measured masse
                   'assume you want to do PCA. \n')
 
 if do_update.strip() == 'y':
-    print('-------->Updating Peak Assignments Using Measured Masses...')
+    print('-------->Updating Peak Assignments From User Changes to Report...')
 
     pcasims.update_classifications(f_doc_mass, f_report)
 

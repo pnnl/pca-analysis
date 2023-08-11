@@ -38,9 +38,8 @@ class pca_sims(object):
             rawdata.set_index(rawdata['Mass (u)'],inplace=True)
             mass=rawdata.index
             rawdata.drop(columns=['Mass (u)'],inplace=True)
-            # TODO Remove
-            print("rawdata: ", rawdata)
-            print("mass: ", mass)
+            # print("rawdata: ", rawdata)
+            # print("mass: ", mass)
         except:
             print(traceback.print_exc())
             print('***Error! Cannot Find Correct File!***')
@@ -130,7 +129,7 @@ class pca_sims(object):
     # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
     def classify_species(self, doc_mass_list, species_list):
         # TODO Expose number of top n species in main.py?
-        # Initialize the classifier instance; we will pass this the raw_masses and, for each of them, get the corresponding probabilities of it being each of the species in the doc_mass
+        # Initialize the classifier instance; we will pass this the raw_mass values and, for each of them, get the corresponding probabilitiy of it being each of the species in the doc_mass
         self.classifier = species_classifier(self.mass_id, doc_mass_list, species_list)
         # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
         self.rel_prob_matrix = self.classifier.calculate_probabilities()
@@ -140,7 +139,7 @@ class pca_sims(object):
 
     """Identify chemical components from the file passed to pca_sims."""
     def identify_components_from_file(self):
-        print('-------->Finding assigned unit mass from file...')
+        print('-------->Finding assigned unit masses from file...')
         doc_mass = self.doc_mass
 
         # Store the possible assignments and document masses in a 1d list to get them in a format easily used by species_classifier later
@@ -165,18 +164,11 @@ class pca_sims(object):
                 doc_mass_list.extend(document_mass)
                 species_list.extend(assignment)
 
-        # TODO Remove
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print("mass_id: ", self.mass_id)
+        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        #     print("mass_id: ", self.mass_id)
 
         # Assign IDs and probabilities to the PCA data using the components found above
         self.classify_species(doc_mass_list, species_list)
-
-
-    # TODO This method is pretty much empty and should be removed.
-    # Perform rule-based analysis to identify chemical components.
-    def perform_rule_based_analysis(self):
-        print('-------->Rule based analysis...')
 
 
     def plot_pca_result(
@@ -196,13 +188,13 @@ class pca_sims(object):
         self.fig_loading_set       = fig_loading_set
     
 
-    def generate_report(self, f_report:str='report.docx', max_pcacomp:int=5):
+    def generate_report(self, f_report:str='report.docx', ion_sign:str='positive', max_pcacomp:int=5):
         """Generate the report"""
         print('-------->Generating the report now...')
 
         # Initialize the report
         f_report = os.path.join(self.pcaDir, self.outDir, f_report)
-        self.report = pca_sims_report(f_report=f_report, description=self.description)
+        self.report = pca_sims_report(f_report=f_report, ion_sign=ion_sign, description=self.description)
 
         # Include the overall pairwise PC plots in the report
         self.report.write_2dscore_plots(self.fig_scores_confid_set)
@@ -248,8 +240,6 @@ class pca_sims(object):
                   "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
                   "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         
-        # TODO This is where we need to change the tables that get put into the document; need to edit 'Document Mass' and 'Initial Peak Assignment' columns to look like:
-        #           6.0146, 2.0152, 1.0073, 6Li+, H2+, H+, 4.20e-07, 0.239, 0.761
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
             # Get the top + loadings by unit mass, then find the species corresponding to that unit mass (subtract 1 from unit mass to account 
@@ -567,9 +557,9 @@ class pca_sims(object):
 
     
     # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
-        # duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
-        # a place without possible duplicates.
-    # TODO Do we need to update the raw masses?
+    #      duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
+    #      a place without possible duplicates.
+    # TODO Do we need to update the raw_mass values (which are initially from the SurfaceLab bins)?
     # TODO Fix Measured Mass and Updated Peak Assignment columns aligning cell text to top instead of bottom border
     # TODO Only works for 1 updated assignment. Do we need to allow for updated assignments to have 2, 3, or more possibilities?
     # TODO DON'T overwrite old species classifications; add to the end of the string entry
@@ -621,7 +611,7 @@ class pca_sims(object):
         # Ensure unit masses are integers and that our Dataframe is sorted before writing it to the given file
         doc_mass['Unit Mass'] = doc_mass['Unit Mass'].astype(int)
         doc_mass.sort_index(inplace=True)
-        print(doc_mass)
+        # print(doc_mass)
 
         # Write updated document masses to file
         doc_mass.to_csv(f_doc_mass, index=False)

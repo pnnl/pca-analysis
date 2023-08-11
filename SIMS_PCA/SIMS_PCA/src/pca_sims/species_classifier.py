@@ -18,11 +18,11 @@ class species_classifier:
         test_size = self.data.shape[0]
         # Get how many classes we need from the original data
         output_dim = self.data.shape[0]
-        print("Num output classes: ", output_dim)
+        # print("Num output classes: ", output_dim)
+        # print(doc_mass_list)
+        # print(species_list)
 
         self.test_size = test_size
-        print(doc_mass_list)
-        print(species_list)
         self.masses_document = np.array(doc_mass_list)
         self.species_document = np.array(species_list)
         self.masses_test = self.data['raw_mass'].to_numpy()
@@ -43,7 +43,7 @@ class species_classifier:
 
         residues = np.array(a - b)
         residues = residues[~pd.isnull(residues)]
-        print(">>>>>>> Residues: ", residues)
+        # print(">>>>>>> Residues: ", residues)
         self.uncertainty = np.std(abs(residues))
         # self.uncertainty = 0.03
         print(">>>>>>> Uncertainty: ", self.uncertainty)
@@ -60,8 +60,8 @@ class species_classifier:
         # in the next cell
         precise_masses = np.reshape(masses_document, (1,-1))
         precise_masses = precise_masses.repeat(test_size,0)
-        print("\nPrecise_masses: \n", precise_masses)
-        print("\nmasses_test: \n", masses_test)
+        # print("\nPrecise_masses: \n", precise_masses)
+        # print("\nmasses_test: \n", masses_test)
 
         # Calculate standard deviations and resulting probabilities for each mass according to its uncertainty pdf.
         # We transform the x_data from 1 x n to n x 1, then broadcast it to n x 48 while subtracting precise_masses and dividing
@@ -71,10 +71,11 @@ class species_classifier:
         prob_matrix = (np.reshape(masses_test, (-1,1)) - precise_masses) / (self.uncertainty)
         prob_matrix = (norm.cdf(-abs(prob_matrix)))
 
+        # TODO Divide by zero warning occurring here?
         # Calculate relative probabilities by scaling row sum to 1
         self.rel_prob_matrix = 1/np.reshape(np.sum(prob_matrix,1),(-1,1)) * prob_matrix
-        # Print out rows from the relative probability matrix to give us an idea of the output
-        print("\n -------------------------------First four rows of rel_prob_matrix: \n", np.round(self.rel_prob_matrix[0:4,:],3), "\n-------------------------------")
+        # Can print out rows from the relative probability matrix to give us an idea of the output
+        # print("\n -------------------------------First four rows of rel_prob_matrix: \n", np.round(self.rel_prob_matrix[0:4,:],3), "\n-------------------------------")
 
         return self.rel_prob_matrix
     
@@ -107,6 +108,6 @@ class species_classifier:
 
             row_index += 1
 
-        print("\n---------top_n_list: \n\n", top_n_list[:50])
+        print("\n---------List of top ions: \n\n", top_n_list[:50], "\n")
 
         return top_n_list

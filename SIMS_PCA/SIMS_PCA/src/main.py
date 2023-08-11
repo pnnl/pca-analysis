@@ -65,14 +65,11 @@ else:
     # to distinguish whether we should analyze using data from the .csv file containing + or - ions
     pcasims.identify_components_from_file()
 
-    # Rule-based analysis
-    pcasims.perform_rule_based_analysis()
-
     # Plot PCA result
     pcasims.plot_pca_result()
 
     # Generate the report
-    pcasims.generate_report(f_report=f_report)
+    pcasims.generate_report(f_report=f_report, ion_sign=positive_or_negative_ion)
 
     print('-------->Data Exporting...')
     print('\n\n\n-------->Congratulations!')

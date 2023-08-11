@@ -14,7 +14,7 @@ import pandas as pd
 
 class pca_sims_report(object):
 
-    def __init__(self, f_report:str, description:Optional[Dict]=None):
+    def __init__(self, f_report:str, ion_sign, description:Optional[Dict]=None):
         self.document = Document()
         self.f_report = f_report
         self.description = description
@@ -28,10 +28,10 @@ class pca_sims_report(object):
             section.right_margin = Inches(0.625)
 
         # Title page
-        self._create_title_page()
+        self._create_title_page(ion_sign)
     
     
-    def _create_title_page(self):
+    def _create_title_page(self, ion_sign:str):
         document = self.document
         document.add_heading("\t\tPCA-SIMS Spectra Analysis Report", 0)
 
@@ -44,7 +44,7 @@ class pca_sims_report(object):
             # p=document.add_paragraph("{}".format(description['experiment']))
             p=document.add_paragraph()
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = p.add_run("{}".format(description['experiment']))
+            run = p.add_run("{}".format(description['experiment']) + " (" + ion_sign + " ions)")
             run.bold = True
             run.font.size = Pt(18)
             run.add_break(); run.add_break();run.add_break()

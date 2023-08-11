@@ -17,16 +17,16 @@ outDir = os.path.join(pcaDir, 'output_sample')
 
 # TODO Improve the end-user interface for positive_or_negative_ion, f_rawsims_data, and f_metadata?
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'negative'
+positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Negative.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
 # SIMS-PCA report
-f_report = os.path.join(pcaDir, 'output_sample/report.docx')
+f_report = os.path.join(pcaDir, 'output_sample/report (positive).docx')
 
 # Document positive and negative mass
 f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")
@@ -48,7 +48,7 @@ pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, posit
 # TODO Implement the update side of this if statement
 # Take user input to decide whether we would like to do PCA (usually done on the first pass) or update the
 # document-based classifications with calibrated data (usually done on later passes).
-do_update = input('-------->Would you like to update values using measured masses (y/n)? If not, I will ' +
+do_update = input('-------->Would you like to update document values database (y/n)? If not, I will ' +
                   'assume you want to do PCA. \n')
 
 if do_update.strip() == 'y':

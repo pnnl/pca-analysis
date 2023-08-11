@@ -1,5 +1,6 @@
 """The class for performing PCA analysis on SIMS data."""
 
+import re
 import os
 import sys
 import traceback
@@ -234,11 +235,11 @@ class pca_sims(object):
         positive_loading_table=pd.DataFrame(
             data={"+ loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+                  "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
             data={"- loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Measured Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+                  "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
@@ -261,7 +262,7 @@ class pca_sims(object):
         
         med=pd.DataFrame(data={"+ loading":["- loading"],"No. #":["No. #"],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
                                "Initial Peak Assignment":["Initial Peak Assignment"], "Initial Probabilities":["Initial Probabilities"], 
-                               "Measured Mass":["Measured Mass"], "Updated Peak assignment":["Updated Peak assignment"]})
+                               "Updated Document Mass":["Updated Document Mass"], "Updated Peak assignment":["Updated Peak assignment"]})
 
         loading_table = pd.concat([positive_loading_table, med, negative_loading_table])
 
@@ -559,10 +560,10 @@ class pca_sims(object):
     # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
     #      duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
     #      a place without possible duplicates.
-    # TODO Do we need to update the raw_mass values (which are initially from the SurfaceLab bins)?
+    # TODO Do we need to update the raw_mass values (which are initially from the SurfaceLab bins) with the measured masses?
     # TODO Fix Measured Mass and Updated Peak Assignment columns aligning cell text to top instead of bottom border
     # TODO Only works for 1 updated assignment. Do we need to allow for updated assignments to have 2, 3, or more possibilities?
-    # TODO DON'T overwrite old species classifications; add to the end of the string entry
+    # TODO Perhaps add functionality to tack on updated classifications to the end of old species classifications instead of overwriting them?
     # TODO Implement selectable data files from subset of 000-099
     # Update the assignment documents using user-entered masses and the peak assignments
     # Parameters:
@@ -576,38 +577,37 @@ class pca_sims(object):
         for table in report.tables:
             # Iterate over all rows in table
             for row in table.rows:
-                # TODO Update these conditions with the doc mass index (i.e., 3)
-                # Ignore the header at the top of the column and rows without any updates
-                # Index 2 is Unit Mass, index 3 is Document Mass, index 6 is Measured Mass, and index 7 is Updated Peak Assignment
-                if not ('loading' in row.cells[0].text) and (row.cells[6].text.strip() or row.cells[7].text.strip()):
-                    cur_unit_mass = int(row.cells[2].text.strip())
-                    cur_doc_mass = row.cells[3].text.strip()
-                    cur_measured_mass = row.cells[6].text.strip()
-                    cur_updated_peak_assignment = row.cells[7].text.strip()
-                    
-                    # print(cur_unit_mass, cur_measured_mass, cur_updated_peak_assignment)
+                # Index 2 is Unit Mass, index 3 is Document Mass, index 6 is Updated Document Mass, and index 7 is Updated Peak Assignment
+                cur_header_start = row.cells[0].text
+                cur_doc_mass = format_user_input(row.cells[3].text)
+                cur_updated_doc_mass = format_user_input(row.cells[6].text)
+                cur_updated_peak_assignment = format_user_input(row.cells[7].text)
 
-                    # TODO Need to fix so cases catch updating existing masses by adding a few decimal places.. (??)
+                # Ignore the header at the top of the column and rows without any updates
+                if not ('loading' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):
+                    cur_unit_mass = int(row.cells[2].text.strip())
+                    # print(cur_unit_mass, cur_doc_mass, cur_updated_doc_mass, cur_updated_peak_assignment)
+
                     # In each row of the table, we should act on one of a few cases:
-                    # Case 1) The user only entered a new mass for a classification that already exist in the document.
+                    # Case 1) The user only entered an updated mass for a classification that already exists in the document.
                     #         In this case, we just find the corresponding 'Unit Mass' in the document and update its 'Document Mass'
-                    # Case 2) The user entered both a new mass and a new classification that already exist in the document.
+                    # Case 2) The user entered both an updated mass and an updated peak assignment that already exist in the document.
                     #         In this case, we find the corresponding 'Unit Mass' in the document and update its 'Assignment' and 'Document Mass'
-                    # Case 3) The user entered both a new mass and a new classification that don't exist.
-                    #         In this case, just find the corresponding slot in the (ordered?) 'Unit Mass' column of the doc. Then, insert a new entry.
+                    # Case 3) The user entered both an updated mass and an updated peak assignment that don't exist.
+                    #         In this case, just find the corresponding slot in the (ordered) 'Unit Mass' column of the doc. Then, insert a new entry.
                     # Case 4) None of the above cases was satisfied, meaning that the user made an error in their data entry which they must fix, so we throw an error.
                     # Note that we don't ever have to write to 'Measured Mass' or 'Updated Peak Assignment' columns
-                    if (cur_doc_mass and not cur_updated_peak_assignment and (cur_unit_mass in doc_mass.index)):
-                        doc_mass.at[cur_unit_mass,'Document Mass'] = cur_doc_mass
-                    elif (cur_doc_mass and cur_updated_peak_assignment):
+                    if (cur_updated_doc_mass and not cur_updated_peak_assignment and (cur_unit_mass in doc_mass.index)):
+                        doc_mass.at[cur_unit_mass,'Document Mass'] = cur_updated_doc_mass
+                    elif (cur_updated_doc_mass and cur_updated_peak_assignment):
                         if (cur_unit_mass in doc_mass.index):
                             doc_mass.at[cur_unit_mass,'Assignment'] = cur_updated_peak_assignment
-                            doc_mass.at[cur_unit_mass,'Document Mass'] = cur_doc_mass
+                            doc_mass.at[cur_unit_mass,'Document Mass'] = cur_updated_doc_mass
                         else:
-                            doc_mass.loc[cur_unit_mass] = [cur_unit_mass, cur_updated_peak_assignment, cur_doc_mass]
+                            doc_mass.loc[cur_unit_mass] = [cur_unit_mass, cur_updated_peak_assignment, cur_updated_doc_mass]
                     else:
-                        print('***Error! Invalid data update. Check each of your mass entries to ensure that either 1) you entered only a measured mass for an entry that already ' +
-                              'exists, 2) you entered both a new measured mass and peak assignment for an entry that already exists, or 3) you entered both a new measured mass ' +
+                        print('***Error! Invalid data update. Check each of your mass entries to ensure that either 1) you entered only an updated document mass for an entry that already ' +
+                              'exists, 2) you entered both an updated document mass and updated peak assignment for an entry that already exists, or 3) you entered both an updated document mass ' +
                               'and peak assignment for an entry that does not yet exist.***')
                         sys.exit()
 
@@ -621,6 +621,16 @@ class pca_sims(object):
 
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
+
+# Removes all extra whitespace from updated masses + peak assignments entered by user and replaces newlines with commas to ensure input is processed correctly later
+def format_user_input(user_str:str):
+    user_str = user_str.strip()
+    user_str = re.sub("\n+", ",", user_str)
+    user_str = re.sub("\s+", "", user_str)
+    user_str = re.sub(",", ", ", user_str)
+
+    return user_str
+
 
 def intersect(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]

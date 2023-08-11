@@ -43,10 +43,10 @@ class species_classifier:
 
         residues = np.array(a - b)
         residues = residues[~pd.isnull(residues)]
-        # print(">>>>>>> Residues: ", residues)
+        # print("\n>>>>>>> Residues: ", residues, "\n")
         self.uncertainty = np.std(abs(residues))
         # self.uncertainty = 0.03
-        print(">>>>>>> Uncertainty: ", self.uncertainty)
+        print("\n>>>>>>> Uncertainty: ", self.uncertainty, "\n")
 
     # Read the data, form representative Gaussian distributions around each peak, 
     # Returns: a matrix with each row representing the sample number and the columns in each row containing the probabilities. 

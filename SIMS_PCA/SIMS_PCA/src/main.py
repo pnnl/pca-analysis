@@ -17,16 +17,16 @@ outDir = os.path.join(pcaDir, 'output_sample')
 
 # TODO Improve the end-user interface for positive_or_negative_ion, f_rawsims_data, and f_metadata?
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'positive'
+positive_or_negative_ion = 'negative'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Negative.TXT')
 
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
 # SIMS-PCA report
-f_report = os.path.join(pcaDir, 'output_sample/report (positive).docx')
+f_report = os.path.join(pcaDir, 'output_sample/report (negative).docx')
 
 # Document positive and negative mass
 f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")

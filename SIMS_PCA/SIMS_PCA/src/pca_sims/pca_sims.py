@@ -235,11 +235,11 @@ class pca_sims(object):
         positive_loading_table=pd.DataFrame(
             data={"+ loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+                  "Measured Mass":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
             data={"- loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+                  "Measured Mass":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
         
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
@@ -262,7 +262,7 @@ class pca_sims(object):
         
         med=pd.DataFrame(data={"+ loading":["- loading"],"No. #":["No. #"],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
                                "Initial Peak Assignment":["Initial Peak Assignment"], "Initial Probabilities":["Initial Probabilities"], 
-                               "Updated Document Mass":["Updated Document Mass"], "Updated Peak assignment":["Updated Peak assignment"]})
+                               "Measured Mass":["Measured Mass"], "Updated Document Mass":["Updated Document Mass"], "Updated Peak assignment":["Updated Peak assignment"]})
 
         loading_table = pd.concat([positive_loading_table, med, negative_loading_table])
 
@@ -560,9 +560,6 @@ class pca_sims(object):
     # TODO We are combing over all loading tables and getting user-entered values. Could the user enter 
     #      duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
     #      a place without possible duplicates.
-    # TODO Do we need to update the raw_mass values (which are initially from the SurfaceLab bins) with the measured masses?
-    # TODO Fix Measured Mass and Updated Peak Assignment columns aligning cell text to top instead of bottom border
-    # TODO Only works for 1 updated assignment. Do we need to allow for updated assignments to have 2, 3, or more possibilities?
     # TODO Perhaps add functionality to tack on updated classifications to the end of old species classifications instead of overwriting them?
     # TODO Implement selectable data files from subset of 000-099
     # Update the assignment documents using user-entered masses and the peak assignments
@@ -577,11 +574,12 @@ class pca_sims(object):
         for table in report.tables:
             # Iterate over all rows in table
             for row in table.rows:
-                # Index 2 is Unit Mass, index 3 is Document Mass, index 6 is Updated Document Mass, and index 7 is Updated Peak Assignment
+                # TODO Do we need to save values from the Measured Mass column by updating the raw_mass values (which are initially from the SurfaceLab bins)?
+                # Index 2 is Unit Mass, index 3 is Document Mass, index 6 is Measured Mass, index 7 is Updated Document Mass, and index 8 is Updated Peak Assignment
                 cur_header_start = row.cells[0].text
                 cur_doc_mass = format_user_input(row.cells[3].text)
-                cur_updated_doc_mass = format_user_input(row.cells[6].text)
-                cur_updated_peak_assignment = format_user_input(row.cells[7].text)
+                cur_updated_doc_mass = format_user_input(row.cells[7].text)
+                cur_updated_peak_assignment = format_user_input(row.cells[8].text)
 
                 # Ignore the header at the top of the column and rows without any updates
                 if not ('loading' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):

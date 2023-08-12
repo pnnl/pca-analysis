@@ -289,8 +289,8 @@ def document_add_assignment(p, assignment:list, in_table:bool=False) -> None:
     n_assign = len(assignment)
     # For each chemical species assignment (expect assign to be a string)
     for j,assign in enumerate(assignment):
-        # Pull off sign out front, then split the remaining string on any digits in the chemical formula (e.g., 'C3H6' -> ['C', 'H'])
-        assign_, sign = assign[:-1], assign[-1]
+        # Pull off sign out front, then split the remaining string on any digits in the chemical formula (e.g., 'C3H6' -> ['C', '3', 'H', '6'])
+        assign_, signs = re.split('([+-]+)', assign)[0:2]
         assign_ = re.split('(\d+)', assign_)
         assign_ = [s for s in assign_ if s != '']
         # Add number and letter
@@ -303,8 +303,8 @@ def document_add_assignment(p, assignment:list, in_table:bool=False) -> None:
                 text.font.subscript = True
             else:
                 text = p.add_run(s)
-        # Add sign
-        text = p.add_run(sign)
+        # Add any sign(s) at the end
+        text = p.add_run(signs)
         text.font.superscript = True
         # If not the last element, add a separator appropriate to the context (table or not in table)
         if j != n_assign-1 and in_table:

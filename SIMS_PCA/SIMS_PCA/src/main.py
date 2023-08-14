@@ -22,6 +22,9 @@ positive_or_negative_ion = 'negative'
 # SIMS data
 f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Negative.TXT')
 
+# Store the subset of groups from the data above which the user wants to analyze
+f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/Group Numbers.txt')
+
 # SIMS metadata
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
@@ -42,10 +45,9 @@ else:
     sys.exit()
 
 # Initialize the pca_sims instance
-pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, positive_or_negative_ion)
+pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, positive_or_negative_ion, f_group_numbers)
 
 
-# TODO Implement the update side of this if statement
 # Take user input to decide whether we would like to do PCA (usually done on the first pass) or update the
 # document-based classifications with calibrated data (usually done on later passes).
 do_update = input('-------->Would you like to update document values database (y/n)? If not, I will ' +

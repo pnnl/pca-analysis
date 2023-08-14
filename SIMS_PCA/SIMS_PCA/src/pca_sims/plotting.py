@@ -40,7 +40,7 @@ def plot_pca_result(
     sample_description_set: List,
     pcaDir: str,
     outDir: str,
-    # f_group_name: str='Group Names.txt',
+    f_group_numbers: str='sims-data/OriginalData/Group Numbers.txt',
     max_pcacomp: int=5
 ):
     """
@@ -80,10 +80,11 @@ def plot_pca_result(
     pca_data=pca_data[:,:max_pcacomp]
     pca_df=pd.DataFrame(pca_data,index=samplelist,columns=labels)
 
-    # TODO What if users use a different format for their group name labels (e.g., S479_P2)?  Should we account for the different characters to split on, such as underscores?
     # What about characters at the start, like the s here, that make x not an integer?
     # FETCH GROUP LABEL
     print('-------->Score Plot and Confidence Ellipse Drawing...')
+
+    # TODO What if users use a different format for their group name labels (e.g., S479_P2)?  Should we account for the different characters to split on, such as underscores?
     '''
     This helper function takes the group names, which we expect to be of the following form:
              <A group of digits> - <P OR N> <A number from 1-6>
@@ -99,7 +100,6 @@ def plot_pca_result(
         pca_df['group']=pca_df['group'].apply(ExtractString)
         pca_df=pca_df.sort_values(by=['group'])
         # print(pca_df)
-        # pca_df.to_csv(pcaDir+'output/PC1-{}_SCORE_TABLE.txt'.format(max_pcacomp))
         pca_df.to_csv(os.path.join(pcaDir, outDir, 'PC1-{}_SCORE_TABLE.txt'.format(max_pcacomp)))
     except:
         print(traceback.print_exc())
@@ -115,23 +115,27 @@ def plot_pca_result(
         return vals[order], vecs[:,order]
 
 
-    # READ GROUP NAMES FROM FILE
-    grouplabel=pca_df['group'].unique()
-    N=len(grouplabel)
-    legendlabel = [sample_description_set[i][1] for i in range(N)]
-    # legendlabel=[]
-    # try:
-    #     # legendlabel=pd.read_csv(pcaDir+"sims-data/Group Names/"+'Group Names.txt',sep=',')
-    #     legendlabel=pd.read_csv(
-    #         # pcaDir+"sims-data/Group Names/"+'Group Names.txt',
-    #         os.path.join(pcaDir, "sims-data", "Group Names", f_group_name), sep=','
-    #     )
-    #     legendlabel=legendlabel['Group'].tolist()
-    #     legendlabel=legendlabel[0:N]
-    # except:
-    #     print(traceback.print_exc())
-    #     print('***Error! Missing Group Names!***')
-    #     sys.exit()
+    # READ SUBSET OF GROUP NUMBERS ON WHICH WE WANT TO PERFORM PCA
+    all_group_nums = pca_df['group'].unique()
+    legend_labels = []
+    N = 0
+    try:
+        sub_group_nums = pd.read_csv(f_group_numbers)
+        sub_group_nums = sub_group_nums['Group'].unique().tolist()
+        N = len(sub_group_nums)
+
+        # Get the indices of the entries in df for which the user asks us to pull data (as specified in group numbers .txt file)
+        sub_group_indices = []
+        for i in range(len(sub_group_nums)):
+            sub_group_indices.append(np.argwhere(all_group_nums == sub_group_nums[i])[0][0])
+
+        # Pull legend labels from the sample descriptions (but only the subset specified the user selected)
+        legend_labels = [sample_description_set[i][1] for i in sub_group_indices]
+    except:
+        print(traceback.print_exc())
+        print('***Error! Group names missing or formatted incorrectly!***')
+        sys.exit()
+
 
     try:
         nstd = 1.645
@@ -156,7 +160,7 @@ def plot_pca_result(
 
                     # i goes from 0,1,...n-1 and label goes from n,n+1,...m. This acounts for the cases where the metadata 
                     # doesn't start at 1.
-                    for i,label in enumerate(grouplabel):
+                    for i,label in enumerate(sub_group_nums):
                         x=pca_df[pca_df['group']==label]['PC'+str(j)].values
                         y=pca_df[pca_df['group']==label]['PC'+str(k)].values
                         figroup.append(plt.scatter(x, y,color=colorn[i],marker=markern[i]))
@@ -166,7 +170,7 @@ def plot_pca_result(
                         ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
                     plt.ylabel('PC'+str(k)+' Scores'+' ('+str(per_varEx[k-1])+'%)'\
                         ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
-                    plt.legend(figroup,legendlabel,loc='center left', bbox_to_anchor=(1, 0.5))
+                    plt.legend(figroup,legend_labels,loc='center left', bbox_to_anchor=(1, 0.5))
                     # plt.tight_layout()
                     # fig_scores = pcaDir+'output/'+'Origin_PC'+str(j)+'PC'+str(k)+'.png' 
                     fig_scores = os.path.join(pcaDir, outDir, 'Origin_PC'+str(j)+'PC'+str(k)+'.png')
@@ -183,7 +187,7 @@ def plot_pca_result(
                     plt.figure(figsize=(10,7))
                     ax = plt.subplot(111)
                     fign+=1
-                    for i,label in enumerate(grouplabel):
+                    for i,label in enumerate(sub_group_nums):
                         x=pca_df[pca_df['group']==label]['PC'+str(j)].values
                         y=pca_df[pca_df['group']==label]['PC'+str(k)].values
                         cov = np.cov(x, y)
@@ -203,7 +207,7 @@ def plot_pca_result(
                         ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
                     plt.ylabel('PC'+str(k)+' Scores'+' ('+str(per_varEx[k-1])+'%)'\
                         ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
-                    plt.legend(figroup,legendlabel,loc='center left', bbox_to_anchor=(1, 0.5))
+                    plt.legend(figroup,legend_labels,loc='center left', bbox_to_anchor=(1, 0.5))
                     
                     # plt.tight_layout()
                     # fig_scores_confid = pcaDir+'output/'+'Ellipse_PC'+str(j)+'PC'+str(k)+'.png'
@@ -219,11 +223,11 @@ def plot_pca_result(
         for pc in range(1,max_pcacomp+1):
             plt.figure(figsize=(14,7))
             ax = plt.subplot(111)
-            group_nums = len(grouplabel)
+            group_nums = len(sub_group_nums)
             plt.xlim(left=0, right=10*(group_nums+1))
             plt.xticks([])
 
-            for i,label in enumerate(grouplabel):
+            for i,label in enumerate(sub_group_nums):
                 heights = pca_df[pca_df['group']==label]['PC'+str(pc)].values
                 pt_nums = len(heights)
                 
@@ -235,14 +239,14 @@ def plot_pca_result(
 
             bottom, top = plt.ylim()
             # for i,label in enumerate(grouplabel):
-            #     plt.text(x=10*(i+1),y=bottom-(top-bottom)/10,s=legendlabel[i],fontsize=28,rotation=15\
+            #     plt.text(x=10*(i+1),y=bottom-(top-bottom)/10,s=legend_labels[i],fontsize=28,rotation=15\
             #         ,fontname = 'Times New Roman', fontweight = 'bold', verticalalignment='center', horizontalalignment='center')
             plt.xlabel('Experiments',fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
             plt.ylabel('PC'+str(pc)+' Scores'+' ('+str(per_varEx[pc-1])+'%)'\
                 ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
-            plt.legend(figroup,legendlabel,loc='center left', bbox_to_anchor=(1, 0.5))
-            # plt.legend(figroup,legendlabel,ncol=2,loc='center left', bbox_to_anchor=(0., -0.3))
-            # plt.legend(figroup,legendlabel,ncol=2,loc='center left', bbox_to_anchor=(0., -0.5))
+            plt.legend(figroup,legend_labels,loc='center left', bbox_to_anchor=(1, 0.5))
+            # plt.legend(figroup,legend_labels,ncol=2,loc='center left', bbox_to_anchor=(0., -0.3))
+            # plt.legend(figroup,legend_labels,ncol=2,loc='center left', bbox_to_anchor=(0., -0.5))
             # plt.tight_layout()
             # fig_score_single = pcaDir+'output/'+'PC_scores_'+'PC'+str(pc)+'.png'
             fig_score_single = os.path.join(pcaDir, outDir, 'PC_scores_'+'PC'+str(pc)+'.png')
@@ -293,7 +297,6 @@ def plot_pca_result(
                 ,fontsize=25, fontname = 'Times New Roman', fontweight = 'bold')
             # plt.tight_layout()
         
-            # fig_loading = pcaDir+'output/'+'Loading'+'PC'+str(i+1)+'.png'
             fig_loading = os.path.join(pcaDir, outDir, 'Loading'+'PC'+str(i+1)+'.png')
             plt.savefig(fig_loading,dpi=dpi)
             # plt.show()
@@ -314,23 +317,16 @@ def plot_pca_result(
 
             Loading_Excel=pd.concat([LoadingPositive_Excel,med,LoadingNegative_Excel])
 
-            # Loading_Excel.to_excel(pcaDir+'output/'+'Loading'+'PC'+str(i+1)+'.xlsx',index=False)
             Loading_Excel.to_excel(os.path.join(pcaDir, outDir, 'Loading'+'PC'+str(i+1)+'.xlsx'),index=False)
 
     except:
         print(traceback.print_exc())
         print('Error! Cannot Draw Correct Loading Plot')
         sys.exit()
+        
     # EXPORTS LOADING DATA
-
     try:
-
-        # loadingTable=pd.DataFrame(loading_scores.T,index=mass,columns=['PC1','PC2','PC3','PC4','PC5'])
         loadingTable=pd.DataFrame(loading_scores.T,index=mass,columns=['PC'+str(i) for i in range(1,max_pcacomp+1)])
-
-
-
-        # loadingTable.to_csv(pcaDir+'output/PC1-{}_loadingTable.txt'.format(max_pcacomp))
         loadingTable.to_csv(os.path.join(pcaDir, outDir, 'PC1-{}_loadingTable.txt'.format(max_pcacomp)))
     except:
         print(traceback.print_exc())

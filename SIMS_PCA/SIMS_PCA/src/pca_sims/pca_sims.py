@@ -27,7 +27,8 @@ class pca_sims(object):
         f_doc_mass: str,
         pcaDir: str,
         outDir: str,
-        positive_or_negative_ion: str
+        positive_or_negative_ion: str,
+        f_group_numbers: str
     ):
         print('\n-------->Reading Data...')
         # Read SIMS data
@@ -75,6 +76,7 @@ class pca_sims(object):
         self.mass_raw               = mass_raw
         self.nmass                  = nmass
         self.ncomp                  = ncomp
+        self.f_group_numbers        = f_group_numbers
 
         if positive_or_negative_ion == 'positive':
             self.positive_ion = True
@@ -179,8 +181,7 @@ class pca_sims(object):
         """Plot PCA analysis result."""
         pca_maxpcacomp_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set = \
                 plot_pca_result(self.pca, self.pca_data, self.samplelist, self.mass, 
-                                # self.pcaDir, self.outDir, self.f_group_name, max_pcacomp)
-                                self.sample_description_set, self.pcaDir, self.outDir, max_pcacomp)
+                                self.sample_description_set, self.pcaDir, self.outDir, self.f_group_numbers, max_pcacomp)
         self.pca_maxpcacomp_df     = pca_maxpcacomp_df
         self.fig_screeplot         = fig_screeplot
         self.fig_scores_set        = fig_scores_set
@@ -232,6 +233,7 @@ class pca_sims(object):
         positive_topx = loadingTable.iloc[-fetchn_more:][pcacomp].index.tolist()[::-1]
         positive_topy = loadingTable.iloc[-fetchn_more:][pcacomp].tolist()[::-1]
 
+        # TODO Apply Group Numbers.txt filtering to the loading tables (not just the PCA plots)
         positive_loading_table=pd.DataFrame(
             data={"+ loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
                   "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,

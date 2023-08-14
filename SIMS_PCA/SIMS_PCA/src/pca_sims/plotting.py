@@ -84,7 +84,7 @@ def plot_pca_result(
     # FETCH GROUP LABEL
     print('-------->Score Plot and Confidence Ellipse Drawing...')
 
-    # TODO What if users use a different format for their group name labels (e.g., S479_P2)?  Should we account for the different characters to split on, such as underscores?
+    # TODO What if users use a different format for their group name labels (e.g., S479-P2)?  Should we account for multiple possible characters to split on, such as underscores, /, -?
     '''
     This helper function takes the group names, which we expect to be of the following form:
              <A group of digits> - <P OR N> <A number from 1-6>
@@ -92,7 +92,7 @@ def plot_pca_result(
     '''
     def ExtractString(x):
         x = str(x)
-        x = x.split('-')[0]
+        x = x.split('_')[0]
         return int(x)
 
     try:

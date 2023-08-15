@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib import patches
 import warnings
+import re
 
 # Plotting settings
 params={
@@ -92,7 +93,8 @@ def plot_pca_result(
     '''
     def ExtractString(x):
         x = str(x)
-        x = x.split('_')[0]
+        x = re.sub("-", "_", x)
+        x = x.split("_")[0]
         return int(x)
 
     try:

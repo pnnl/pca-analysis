@@ -46,7 +46,7 @@ class species_classifier:
         # print("\n>>>>>>> Residues: ", residues, "\n")
         self.uncertainty = np.std(abs(residues))
         # self.uncertainty = 0.03
-        print("\n>>>>>>> Uncertainty: ", self.uncertainty, "\n")
+        print("\n-------->Uncertainty: ", self.uncertainty, "\n")
 
     # Read the data, form representative Gaussian distributions around each peak, 
     # Returns: a matrix with each row representing the sample number and the columns in each row containing the probabilities. 
@@ -108,6 +108,6 @@ class species_classifier:
 
             row_index += 1
 
-        print("\n---------List of top ions: \n\n", top_n_list[:50], "\n")
+        print("\n-------->List of top ions: \n\n", top_n_list[:50], "\n")
 
         return top_n_list

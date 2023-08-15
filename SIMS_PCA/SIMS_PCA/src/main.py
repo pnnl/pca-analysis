@@ -29,7 +29,7 @@ f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/Group Numbers.txt
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
 # SIMS-PCA report
-f_report = os.path.join(pcaDir, 'output_sample/report (negative).docx')
+f_report = os.path.join(pcaDir, 'output_sample/report.docx')
 
 # Document positive and negative mass
 f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")

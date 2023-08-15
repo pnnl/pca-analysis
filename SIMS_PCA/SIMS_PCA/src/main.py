@@ -15,7 +15,7 @@ pcaDir = "/home/cswelch/pca/SIMS_PCA/SIMS_PCA"
 # Output folder
 outDir = os.path.join(pcaDir, 'output_sample')
 
-# TODO Improve the end-user interface for positive_or_negative_ion, f_rawsims_data, and f_metadata?
+# TODO Implement GUI using CustomTkinter to get positive_or_negative_ion, f_rawsims_data, f_metadata, and f_report from user
 # Indicates to rest of code whether we are handling positive or negative ions
 positive_or_negative_ion = 'negative'
 
@@ -48,14 +48,24 @@ else:
 pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, positive_or_negative_ion, f_group_numbers)
 
 
-# Take user input to decide whether we would like to do PCA (usually done on the first pass) or update the
+# Take user input to decide whether we would like to do PCA as yes or no (usually done on the first pass) or update the
 # document-based classifications with calibrated data (usually done on later passes).
-do_update = input('-------->Would you like to update document values database (y/n)? If not, I will ' +
-                  'assume you want to do PCA. \n')
+# If the user does not enter a valid form of yes or no, then we allow for new attempts until a valid string is given.
+while True:
+    do_update = input('-------->Would you like to update document values database (y/n)? If not, I will ' +
+                'assume you want to do PCA. \n').strip()
+    
+    if (do_update != 'y') and (do_update != 'Y') and (do_update != 'n') and (do_update != 'N'):
+        print('\n***Invalid option selected; enter either \'y\' for yes or \'n\' for no.\n')
+        continue
+    else:
+        break
 
-if do_update.strip() == 'y':
+
+if (do_update == 'y') or (do_update == 'Y'):
     print('-------->Updating Peak Assignments From User Changes to Report...')
 
+    # Perform database update
     pcasims.update_classifications(f_doc_mass, f_report)
 
     print('-------->Done.')

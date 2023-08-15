@@ -99,28 +99,19 @@ class pca_sims_report(object):
         p = document.add_paragraph("", style="List Bullet")
         for index in positive_loading_table.index:
             unit_mass, assign = positive_loading_table.loc[index, "Unit Mass"], positive_loading_table.loc[index, "Initial Peak Assignment"]
-            # TODO Remove trailing comma + space (, ) after last set of assignments here for polish
-            # TODO Create a helper method to encapsulate this boilerplate (it's repeated 6 times)
-            if str(assign) == 'nan':
-                p.add_run("m/z {} (-), ".format(unit_mass))
-            else:
-                p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
-                p.add_run("), ")
+            write_top_loadings_list(p, unit_mass, assign)
+        # Remove the extra comma separator and space at the end of the run
+        p.text = p.text[:-2]
         positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
         document.add_paragraph(", ".join(positive_dominant_ions), style="List Bullet") # ion categories
 
         # Write the top 20 negative loading assignments
         document.add_paragraph("Low score samples contain more:")
-        p = document.add_paragraph("", style="List Bullet")
         for index in negative_loading_table.index:
             unit_mass, assign = negative_loading_table.loc[index, "Unit Mass"], negative_loading_table.loc[index, "Initial Peak Assignment"]
-            if str(assign) == 'nan':
-                p.add_run("m/z {} (-), ".format(unit_mass))
-            else:
-                p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
-                p.add_run("), ")
+            write_top_loadings_list(p, unit_mass, assign)
+        # Remove the extra comma separator and space at the end of the run
+        p.text = p.text[:-2]
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
 
@@ -168,24 +159,14 @@ class pca_sims_report(object):
         p = document.add_paragraph("""The major positive PC{0} loadings are """.format(pcacomp), style="List Bullet")
         for index in positive_loading_table.index:
             unit_mass, assign = positive_loading_table.loc[index, "Unit Mass"], positive_loading_table.loc[index, "Initial Peak Assignment"]
-            if str(assign) == 'nan':
-                p.add_run("m/z {} (-), ".format(unit_mass))
-            else:
-                p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
-                p.add_run("), ")
-        p.add_run(", indicating they are more observed in high PC{0} score samples.".format(pcacomp))
+            write_top_loadings_list(p, unit_mass, assign)
+        p.add_run("indicating they are more observed in high PC{0} score samples.".format(pcacomp))
 
         p = document.add_paragraph("""The major negative PC{0} loadings are """.format(pcacomp), style="List Bullet")
         for index in negative_loading_table.index:
             unit_mass, assign = negative_loading_table.loc[index, "Unit Mass"], negative_loading_table.loc[index, "Initial Peak Assignment"]
-            if str(assign) == 'nan':
-                p.add_run("m/z {} (-), ".format(unit_mass))
-            else:
-                p.add_run("m/z {} (".format(unit_mass))
-                document_add_assignment(p, assign)
-                p.add_run("), ")
-        p.add_run(", indicating they are more observed in high PC{0} score samples.".format(pcacomp))
+            write_top_loadings_list(p, unit_mass, assign)
+        p.add_run("indicating they are more observed in high PC{0} score samples.".format(pcacomp))
 
         # Write the dominant ion categories
         positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
@@ -196,32 +177,17 @@ class pca_sims_report(object):
             p = document.add_paragraph("{} signals, such as ".format(ion_type), style="List Bullet")
             for unit_mass in dominant_mass:
                 assign = positive_loading_table.loc[unit_mass, "Initial Peak Assignment"]
-                if str(assign) == 'nan':
-                    p.add_run("m/z {} (-), ".format(unit_mass))
-                else:
-                    p.add_run("m/z {} (".format(unit_mass))
-                    document_add_assignment(p, assign)
-                    p.add_run("), ")
-
-            p.add_run(", are mostly found in positive loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
+                write_top_loadings_list(p, unit_mass, assign)
+            p.add_run("are mostly found in positive loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
         
         for ion_type in negative_dominant_ions:
             dominant_mass = ion_signals[ion_type]['top_ion_list']
             
             p = document.add_paragraph("{} signals, such as ".format(ion_type), style="List Bullet")
-            # print(ion_type, ion_signals[ion_type])
             for unit_mass in dominant_mass:
-                # print(unit_mass)
-                # print(negative_loading_table.index)
                 assign = negative_loading_table.loc[unit_mass, "Initial Peak Assignment"]
-                if str(assign) == 'nan':
-                    p.add_run("m/z {} (-), ".format(unit_mass))
-                else:
-                    p.add_run("m/z {} (".format(unit_mass))
-                    document_add_assignment(p, assign)
-                    p.add_run("), ")
-
-            p.add_run(", are mostly found in negative loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
+                write_top_loadings_list(p, unit_mass, assign)
+            p.add_run("are mostly found in negative loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
     
     def save(self):
         # TODO: Generate table of contents
@@ -343,3 +309,15 @@ def is_float(element: Any) -> bool:
         return True
     except ValueError:
         return False
+    
+
+# TODO Remove trailing comma + space (, ) after last set of assignments here for polish
+# Encapsulates boilerplate for writing the loadings lists in bullet point form
+def write_top_loadings_list(p, unit_mass: float, assign: str):
+    # Add all m/z ratios and their corresponding assignments (if we can get them)
+    if str(assign) == 'nan':
+        p.add_run("m/z {} (-)".format(unit_mass))
+    else:
+        p.add_run("m/z {} (".format(unit_mass))
+        document_add_assignment(p, assign)
+        p.add_run("), ")

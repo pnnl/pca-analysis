@@ -235,13 +235,13 @@ class pca_sims(object):
 
         # TODO Apply Group Numbers.txt filtering to the loading tables (not just the PCA plots)
         positive_loading_table=pd.DataFrame(
-            data={"+ loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
-                  "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Measured Mass":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+            data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
+                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
+                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
-            data={"- loading":[" "]*fetchn_more, "No. #":[x for x in range(1,fetchn_more+1)],
-                  "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, "Initial Probabilities":[" "]*fetchn_more,
-                  "Measured Mass":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more, "Updated Peak Assignment":[" "]*fetchn_more})
+            data={"- Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
+                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
+                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
@@ -262,9 +262,11 @@ class pca_sims(object):
             negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
         negative_loading_table.index = negative_loading_table["Unit Mass"]
         
-        med=pd.DataFrame(data={"+ loading":["- loading"],"No. #":["No. #"],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
+        med=pd.DataFrame(data={"+ Loading No.":["- Loading No."],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
                                "Initial Peak Assignment":["Initial Peak Assignment"], "Initial Probabilities":["Initial Probabilities"], 
-                               "Measured Mass":["Measured Mass"], "Updated Document Mass":["Updated Document Mass"], "Updated Peak assignment":["Updated Peak assignment"]})
+                               "Measured Mass":["Measured Mass"], "Peak Assignment (from Measured Mass)":["Peak Assignment (from Measured Mass)"],
+                                "Updated Peak Assignment (from Document Mass)":["Updated Peak Assignment (from Document Mass)"], 
+                                "Updated Document Mass":["Updated Document Mass"]})
 
         loading_table = pd.concat([positive_loading_table, med, negative_loading_table])
 
@@ -577,14 +579,17 @@ class pca_sims(object):
             # Iterate over all rows in table
             for row in table.rows:
                 # TODO Do we need to save values from the Measured Mass column by updating the raw_mass values (which are initially from the SurfaceLab bins)?
-                # Index 2 is Unit Mass, index 3 is Document Mass, index 6 is Measured Mass, index 7 is Updated Document Mass, and index 8 is Updated Peak Assignment
+                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is Updated Peak Assignment based on Measured Mass, index 7 
+                # is Updated Peak Assignment, and index 8 is Updated Document Mass
                 cur_header_start = row.cells[0].text
-                cur_doc_mass = format_user_input(row.cells[3].text)
-                cur_updated_doc_mass = format_user_input(row.cells[7].text)
-                cur_updated_peak_assignment = format_user_input(row.cells[8].text)
+                cur_doc_mass = format_user_input(row.cells[2].text)
+                cur_measured_mass = format_user_input(row.cells[5].text)
+                cur_updated_peak_assignment_measured = format_user_input(row.cells[6].text)
+                cur_updated_peak_assignment = format_user_input(row.cells[7].text)
+                cur_updated_doc_mass = format_user_input(row.cells[8].text)
 
                 # Ignore the header at the top of the column and rows without any updates
-                if not ('loading' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):
+                if not ('No.' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):
                     cur_unit_mass = int(row.cells[2].text.strip())
                     # print(cur_unit_mass, cur_doc_mass, cur_updated_doc_mass, cur_updated_peak_assignment)
 
@@ -596,7 +601,6 @@ class pca_sims(object):
                     # Case 3) The user entered both an updated mass and an updated peak assignment that don't exist.
                     #         In this case, just find the corresponding slot in the (ordered) 'Unit Mass' column of the doc. Then, insert a new entry.
                     # Case 4) None of the above cases was satisfied, meaning that the user made an error in their data entry which they must fix, so we throw an error.
-                    # Note that we don't ever have to write to 'Measured Mass' or 'Updated Peak Assignment' columns
                     if (cur_updated_doc_mass and not cur_updated_peak_assignment and (cur_unit_mass in doc_mass.index)):
                         doc_mass.at[cur_unit_mass,'Document Mass'] = cur_updated_doc_mass
                     elif (cur_updated_doc_mass and cur_updated_peak_assignment):

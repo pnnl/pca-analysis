@@ -23,7 +23,7 @@ class pca_sims_report(object):
         sections = self.document.sections
         for section in sections:
             section.top_margin = Inches(0.625)
-            section.bottom_margin = Inches(1)
+            section.bottom_margin = Inches(0.625)
             section.left_margin = Inches(0.625)
             section.right_margin = Inches(0.625)
 
@@ -117,7 +117,8 @@ class pca_sims_report(object):
 
 
     # Writes a PCA loading table to the document. Columns are:
-    # +/- loading | No. # | Unit Mass | Document Mass | Initial Peak Assignment | Measured Mass | Updated Peak Assignment
+    # No. # | Unit Mass | Document Mass | Initial Peak Assignment | Initial Probabilities | Measured Mass | Updated Peak Assignment (from Measured Mass)
+    #  | Updated Peak Assignment (from Document Mass) | Updated Document Mass
     def write_table_page(self, pcacomp:int, positive_ion:bool,
                          p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame, 
      ):

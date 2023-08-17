@@ -93,11 +93,13 @@ class pca_sims(object):
         self.mass_id['raw_mass'] = mass_raw
         self.mass_id.sort_values(by=['raw_mass'], inplace=True)
 
+        # Save the measured masses for ID later
+        self.measured_masses = pd.read_csv('SIMS_PCA/SIMS_PCA/sims-data/measured_masses.csv')
+
         # Get the unit mass assignments from the chosen .csv document
         self.doc_mass = pd.read_csv(f_doc_mass, index_col=0)
 
     
-    # def perform_pca(self, max_pcacomp:int=5):
     def perform_pca(self):
         """Perform PCA on SIMS data."""
         rawdata = self.rawdata
@@ -129,19 +131,29 @@ class pca_sims(object):
         self._get_loading_scores()
     
 
+    # TODO Expose number of top n species in main.py?
     # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
-    def classify_species(self, doc_mass_list, species_list):
-        # TODO Expose number of top n species in main.py?
-        # Initialize the classifier instance; we will pass this the raw_mass values and, for each of them, get the corresponding probabilitiy of it being each of the species in the doc_mass
-        self.classifier = species_classifier(self.mass_id, doc_mass_list, species_list)
-        # Get the relative probabilities with number of rows = number of test masses (e.g., 800) and number of columns = number of reference masses (e.g., 48)
-        self.rel_prob_matrix = self.classifier.calculate_probabilities()
-        # Save (up to) the top 5 potential candidates for each list.  We'll add them to the report later.
-        self.top_n_species = self.classifier.identify_top_n_species(5)
+    # Params:
+    #       mass_id - This DataFrame includes the raw masses to be tested
+    #       doc_mass_list - The list of document masses
+    #       species_list - The list of species masses, for which there is a 1:1 correspondence with doc_mass_list
+    #       n - The maximum number of candidate species to be displayed in the report
+    # Returns:
+    #       classifier - An instance of the species_classifier class built on the doc masses; pass this the raw_mass
+    #                    values and, for each of them, get the corresponding probability of it being each of the species in the doc_mass
+    #       rel_prob_matrix - Stores the relative probabilities with number of rows = number of test masses (e.g., 800) 
+    #                         and number of columns = number of reference masses (e.g., 48)
+    #       top_n_species - The top 5 potential candidates for each list; we add them to the report later
+    def classify_species(self, mass_id_raw: pd.Series, mass_id_doc: pd.Series, doc_mass_list: list, species_list: list, n: int):
+        classifier = species_classifier(mass_id_raw, mass_id_doc, doc_mass_list, species_list)
+        rel_prob_matrix = classifier.calculate_probabilities()
+        top_n_species = classifier.identify_top_n_species(n)
+
+        return classifier, rel_prob_matrix, top_n_species
 
 
-    """Identify chemical components from the file passed to pca_sims."""
     def identify_components_from_file(self):
+        """Identify chemical components from the file passed to pca_sims."""
         print('-------->Finding assigned unit masses from file...')
         doc_mass = self.doc_mass
 
@@ -167,11 +179,31 @@ class pca_sims(object):
                 doc_mass_list.extend(document_mass)
                 species_list.extend(assignment)
 
-        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        #     print("mass_id: ", self.mass_id)
+        # Do the same process as above to get the measured masses 'document_mass' column into the correct format (i.e., there are a bunch of floats and strings in this column; make sure to put all into lists
+        # of strings so species_classifier will process them correctly)
+        for i in self.measured_masses.index:
+            measured_mass = str(self.measured_masses.loc[i, 'document_mass'])
+            self.measured_masses.loc[i, 'document_mass'] = ''
 
+            measured_mass = measured_mass.split(',')
+            measured_mass = [float(mass) for mass in measured_mass]
+            self.measured_masses.at[i, 'document_mass'] = measured_mass
+
+        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        #     print("measured_masses: ", self.measured_masses)
+
+        # TODO Make second two outputs fields of the classifier instance instead of having them show up as separate variables here
         # Assign IDs and probabilities to the PCA data using the components found above
-        self.classify_species(doc_mass_list, species_list)
+        self.classifier_doc, self.rel_prob_matrix_doc, self.top_n_species_doc = self.classify_species(self.mass_id['raw_mass'], 
+                                                                                                      self.mass_id['document_mass'], 
+                                                                                                      doc_mass_list, 
+                                                                                                      species_list, 5)
+        # Do the same for the measured masses; we keep track of them so the user can see the peak assignments and probabilities corresponding to these values on 
+        # the next run of PCA analysis
+        self.classifier_measured, self.rel_prob_matrix_measured, self.top_n_species_measured = self.classify_species(self.measured_masses['measured_mass'],
+                                                                                                                    self.measured_masses['document_mass'], 
+                                                                                                                    doc_mass_list, 
+                                                                                                                    species_list, 5)
 
 
     def plot_pca_result(
@@ -191,7 +223,7 @@ class pca_sims(object):
     
 
     def generate_report(self, f_report:str='report.docx', ion_sign:str='positive', max_pcacomp:int=5):
-        """Generate the report"""
+        """Generate the report."""
         print('-------->Generating the report now...')
 
         # Initialize the report
@@ -215,7 +247,7 @@ class pca_sims(object):
     
 
     def generate_analysis_pcacomp(self, pcacomp:int=1):
-        """Generate the analysis for one pca component"""
+        """Generate the analysis for one pca component."""
 
         # ---------------- Plot pages ------------------
         score_plot = self.fig_scores_single_set[pcacomp-1]
@@ -237,38 +269,55 @@ class pca_sims(object):
         positive_loading_table=pd.DataFrame(
             data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
                   "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
-                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
+                  "Probabilities (from Measured Mass)":[" "]*fetchn_more, "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
             data={"- Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
                   "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
-                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
+                  "Probabilities (from Measured Mass)":[" "]*fetchn_more, "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         
+        top_n_species_measured_ids = np.array([sub_list[1][0] for sub_list in self.top_n_species_measured])
+        n = len(top_n_species_measured_ids)
+
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
             # Get the top + loadings by unit mass, then find the species corresponding to that unit mass (subtract 1 from unit mass to account 
             # for 0-indexing)
             unit_mass = positive_loading_table.loc[ind, "Unit Mass"]
-            # positive_loading_table.loc[ind, "Accurate Mass"] = mass_id.loc[unit_mass, 'raw_mass']
-            positive_loading_table.at[ind, "Document Mass"] = self.top_n_species[unit_mass-1][0]
-            positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species[unit_mass-1][1]
-            positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
+
+            positive_loading_table.at[ind, "Document Mass"] = self.top_n_species_doc[unit_mass-1][0]
+            positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
+            positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
+
+            # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
+            # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
+            # As a precondition, check whether any of the top n species match the current peak assignment
+            cur_species_repeated = np.repeat(positive_loading_table.at[ind, "Initial Peak Assignment"][0], n)
+            if (np.sum(cur_species_repeated == top_n_species_measured_ids) >= 1):
+                # Find the index of the assignment that matches the species
+                i = np.argmax(top_n_species_measured_ids)
+                positive_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
+                positive_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
+                positive_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
         for ind in negative_loading_table.index:
             unit_mass = negative_loading_table.loc[ind, "Unit Mass"]
-            # negative_loading_table.at[ind, "Accurate Mass"] = mass_id.loc[unit_mass, 'raw_mass']
-            negative_loading_table.at[ind, "Document Mass"] = self.top_n_species[unit_mass-1][0]
-            negative_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species[unit_mass-1][1]
-            negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
-        negative_loading_table.index = negative_loading_table["Unit Mass"]
-        
-        med=pd.DataFrame(data={"+ Loading No.":["- Loading No."],"Unit Mass":["Unit Mass"],"Document Mass":["Document Mass"],
-                               "Initial Peak Assignment":["Initial Peak Assignment"], "Initial Probabilities":["Initial Probabilities"], 
-                               "Measured Mass":["Measured Mass"], "Peak Assignment (from Measured Mass)":["Peak Assignment (from Measured Mass)"],
-                                "Updated Peak Assignment (from Document Mass)":["Updated Peak Assignment (from Document Mass)"], 
-                                "Updated Document Mass":["Updated Document Mass"]})
 
-        loading_table = pd.concat([positive_loading_table, med, negative_loading_table])
+            negative_loading_table.at[ind, "Document Mass"] = self.top_n_species_doc[unit_mass-1][0]
+            negative_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
+            negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
+
+            # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
+            # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
+            # As a precondition, check whether any of the top n species match the current peak assignment
+            cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Initial Peak Assignment"][0], n)
+            if (np.sum(cur_species_repeated == top_n_species_measured_ids) >= 1):
+                # Find the index of the assignment that matches the species
+                i = np.argmax(top_n_species_measured_ids)
+                negative_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
+                negative_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
+                negative_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
+        negative_loading_table.index = negative_loading_table["Unit Mass"]
 
         # print(loading_table)
 
@@ -572,21 +621,30 @@ class pca_sims(object):
     def update_classifications(self, f_doc_mass:str, f_report:str):
         doc_mass = pd.read_csv(f_doc_mass)
         doc_mass.set_index(doc_mass['Unit Mass'], inplace=True)
+        measured_mass = pd.DataFrame({'measured_mass':[]})
         report = docx.Document(f_report)
 
+        # Indexing for measured_mass
+        i=0
         # Iterate over all tables in document
         for table in report.tables:
             # Iterate over all rows in table
             for row in table.rows:
-                # TODO Do we need to save values from the Measured Mass column by updating the raw_mass values (which are initially from the SurfaceLab bins)?
+                # TODO Save values from the Measured Mass column by updating the raw_mass values (which are initially from the SurfaceLab bins) and computing probabilities in
+                #      Updated Peak Assignments
                 # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is Updated Peak Assignment based on Measured Mass, index 7 
                 # is Updated Peak Assignment, and index 8 is Updated Document Mass
                 cur_header_start = row.cells[0].text
                 cur_doc_mass = format_user_input(row.cells[2].text)
                 cur_measured_mass = format_user_input(row.cells[5].text)
-                cur_updated_peak_assignment_measured = format_user_input(row.cells[6].text)
                 cur_updated_peak_assignment = format_user_input(row.cells[7].text)
                 cur_updated_doc_mass = format_user_input(row.cells[8].text)
+
+                # Update the measured masses if there is one in this row
+                if not ('No.' in cur_header_start) and cur_measured_mass:
+                    measured_mass.loc[i,'document_mass'] = cur_doc_mass
+                    measured_mass.loc[i,'measured_mass'] = cur_measured_mass
+                    i += 1
 
                 # Ignore the header at the top of the column and rows without any updates
                 if not ('No.' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):
@@ -622,6 +680,7 @@ class pca_sims(object):
 
         # Write updated document masses to file
         doc_mass.to_csv(f_doc_mass, index=False)
+        measured_mass.to_csv('SIMS_PCA/SIMS_PCA/sims-data/measured_masses.csv', index=False)
 
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------

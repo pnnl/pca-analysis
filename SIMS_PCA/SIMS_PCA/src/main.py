@@ -1,4 +1,4 @@
-"""The main script for performing PCA-SIMS analysis"""
+"""The main script for performing PCA-SIMS analysis."""
 
 import os
 import sys

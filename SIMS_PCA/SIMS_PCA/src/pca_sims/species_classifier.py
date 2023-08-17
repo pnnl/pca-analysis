@@ -8,16 +8,18 @@ from scipy.stats import norm
 
 class species_classifier:
 
-    # Constructor; takes the following parameters:
-    #       data - The mass vs. species data (either positive or negative ions)
-    def __init__(self, data:pd.DataFrame, doc_mass_list:list, species_list:list):
+    # Constructor
+    # Params:
+    #       data - This DataFrame includes the raw masses to be tested 
+    #       doc_mass_list - The list of document masses to which we will compare the raw masses
+    #       species_list - The list of species masses, for which there is a 1:1 correspondence with doc_mass_list
+    def __init__(self, data_raw: pd.Series, data_doc: pd.Series, doc_mass_list:list, species_list:list):
         # TODO Find a more efficient way of not altering the original DataFrame
-        self.data = data.copy(deep=True)
         
         # Get how many masses need to be tested
-        test_size = self.data.shape[0]
+        test_size = data_raw.shape[0]
         # Get how many classes we need from the original data
-        output_dim = self.data.shape[0]
+        output_dim = data_doc.shape[0]
         # print("Num output classes: ", output_dim)
         # print(doc_mass_list)
         # print(species_list)
@@ -25,13 +27,13 @@ class species_classifier:
         self.test_size = test_size
         self.masses_document = np.array(doc_mass_list)
         self.species_document = np.array(species_list)
-        self.masses_test = self.data['raw_mass'].to_numpy()
+        self.masses_test = data_raw.to_numpy()
 
         # Get approximate uncertainty from the data by comparing the test and document masses in the mass id file (data_test). We can exclude
         # the document masses that have multiple potential classifications since they might artificially inflate the uncertainty depending on
         # which one we select.
         a = self.masses_test
-        b = self.data['document_mass'].to_numpy()
+        b = data_doc.to_numpy()
 
         for i in range(len(b)):
             if type(b[i]) != list:
@@ -43,7 +45,7 @@ class species_classifier:
 
         residues = np.array(a - b)
         residues = residues[~pd.isnull(residues)]
-        # print("\n>>>>>>> Residues: ", residues, "\n")
+        # print("\n--------> Residues: ", residues, "\n")
         self.uncertainty = np.std(abs(residues))
         # self.uncertainty = 0.03
         print("\n-------->Uncertainty: ", self.uncertainty, "\n")
@@ -90,7 +92,7 @@ class species_classifier:
         rel_prob_matrix = self.rel_prob_matrix
         top_n_list = []
 
-        # TODO Also cut off species with probability less than 1%
+        # TODO Also cut off species with probability less than 1%?
         # Increment that tells us which test mass to compare with our precise masses each loop
         row_index = 0
         # Round probabilities to 3 decimal places for succinctness later and order probabilities from greatest to least

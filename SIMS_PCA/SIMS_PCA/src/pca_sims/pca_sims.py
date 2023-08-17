@@ -308,6 +308,7 @@ class pca_sims(object):
             negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
 
             # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
+            # TODO Index out of range bug?
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
             # As a precondition, check whether any of the top n species match the current peak assignment
             cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Initial Peak Assignment"][0], n)

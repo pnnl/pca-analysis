@@ -275,7 +275,9 @@ class pca_sims(object):
                   "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
                   "Probabilities (from Measured Mass)":[" "]*fetchn_more, "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         
-        top_n_species_measured_ids = np.array([sub_list[1][0] for sub_list in self.top_n_species_measured])
+        # TODO Fix masses that are off by too much going to another slot (maybe output error message to user that mass entered is too far off from doc value?)
+        # Extract the species classifications (as strings) from each of the top n options, but only if the lists are nonempty to prevent errors
+        top_n_species_measured_ids = np.array([sub_list[1][0] if sub_list[1] else '' for sub_list in self.top_n_species_measured])
         n = len(top_n_species_measured_ids)
 
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
@@ -290,14 +292,17 @@ class pca_sims(object):
 
             # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
-            # As a precondition, check whether any of the top n species match the current peak assignment
-            cur_species_repeated = np.repeat(positive_loading_table.at[ind, "Initial Peak Assignment"][0], n)
-            if (np.sum(cur_species_repeated == top_n_species_measured_ids) >= 1):
-                # Find the index of the assignment that matches the species
-                i = np.argmax(top_n_species_measured_ids)
-                positive_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
-                positive_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
-                positive_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
+            # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
+            # the current peak assignment
+            if (positive_loading_table.at[ind, "Document Mass"] and positive_loading_table.at[ind, "Initial Peak Assignment"]):
+                cur_species_repeated = np.repeat(positive_loading_table.at[ind, "Initial Peak Assignment"][0], n)
+                matching_array = cur_species_repeated == top_n_species_measured_ids
+                if (np.sum(matching_array) >= 1):
+                    # Find the index of the assignment that matches the species
+                    i = np.argmax(matching_array)
+                    positive_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
+                    positive_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
+                    positive_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
         for ind in negative_loading_table.index:
@@ -308,16 +313,18 @@ class pca_sims(object):
             negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
 
             # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
-            # TODO Index out of range bug?
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
-            # As a precondition, check whether any of the top n species match the current peak assignment
-            cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Initial Peak Assignment"][0], n)
-            if (np.sum(cur_species_repeated == top_n_species_measured_ids) >= 1):
-                # Find the index of the assignment that matches the species
-                i = np.argmax(top_n_species_measured_ids)
-                negative_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
-                negative_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
-                negative_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
+            # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
+            # the current peak assignment
+            if (negative_loading_table.at[ind, "Document Mass"] and negative_loading_table.at[ind, "Initial Peak Assignment"]):
+                cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Initial Peak Assignment"][0], n)
+                matching_array = cur_species_repeated == top_n_species_measured_ids
+                if (np.sum(matching_array) >= 1):
+                    # Find the index of the assignment that matches the species
+                    i = np.argmax(matching_array)
+                    negative_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
+                    negative_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
+                    negative_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
         negative_loading_table.index = negative_loading_table["Unit Mass"]
 
         # print(loading_table)
@@ -622,34 +629,31 @@ class pca_sims(object):
     def update_classifications(self, f_doc_mass:str, f_report:str):
         doc_mass = pd.read_csv(f_doc_mass)
         doc_mass.set_index(doc_mass['Unit Mass'], inplace=True)
-        measured_mass = pd.DataFrame({'measured_mass':[]})
+        measured_mass = pd.DataFrame({'document_mass':[], 'measured_mass':[]})
         report = docx.Document(f_report)
 
-        # Indexing for measured_mass
-        i=0
         # Iterate over all tables in document
         for table in report.tables:
             # Iterate over all rows in table
             for row in table.rows:
-                # TODO Save values from the Measured Mass column by updating the raw_mass values (which are initially from the SurfaceLab bins) and computing probabilities in
-                #      Updated Peak Assignments
-                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is Updated Peak Assignment based on Measured Mass, index 7 
-                # is Updated Peak Assignment, and index 8 is Updated Document Mass
+                # TODO Highlight last two columns differently
+                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is Updated Peak Assignment based on Measured Mass, index 7
+                # is Probabilities from Measured Mass, index 8 is Updated Peak Assignment, and index 9 is Updated Document Mass
                 cur_header_start = row.cells[0].text
                 cur_doc_mass = format_user_input(row.cells[2].text)
                 cur_measured_mass = format_user_input(row.cells[5].text)
-                cur_updated_peak_assignment = format_user_input(row.cells[7].text)
-                cur_updated_doc_mass = format_user_input(row.cells[8].text)
+                cur_updated_peak_assignment = format_user_input(row.cells[8].text)
+                cur_updated_doc_mass = format_user_input(row.cells[9].text)
 
                 # Update the measured masses if there is one in this row
-                if not ('No.' in cur_header_start) and cur_measured_mass:
-                    measured_mass.loc[i,'document_mass'] = cur_doc_mass
-                    measured_mass.loc[i,'measured_mass'] = cur_measured_mass
-                    i += 1
+                if not ('No.' in cur_header_start) and cur_measured_mass and (not cur_measured_mass in measured_mass['measured_mass'].values):
+                    mm_size = len(measured_mass.index)
+                    measured_mass.loc[mm_size, 'document_mass'] = cur_doc_mass
+                    measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass
 
                 # Ignore the header at the top of the column and rows without any updates
                 if not ('No.' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):
-                    cur_unit_mass = int(row.cells[2].text.strip())
+                    cur_unit_mass = int(row.cells[1].text.strip())
                     # print(cur_unit_mass, cur_doc_mass, cur_updated_doc_mass, cur_updated_peak_assignment)
 
                     # In each row of the table, we should act on one of a few cases:

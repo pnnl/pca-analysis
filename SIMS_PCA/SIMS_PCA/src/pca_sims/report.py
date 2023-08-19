@@ -203,6 +203,7 @@ class pca_sims_report(object):
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
 
+# TODO Remove extraneous \n at start of every entry to shrink table size
 # Add a table to the end and create a reference variable along with an extra header row
 def document_add_table(document:Document, df:pd.DataFrame):
     # Create number of rows + columns corresponding to the dataframe's size
@@ -312,7 +313,6 @@ def is_float(element: Any) -> bool:
         return False
     
 
-# TODO Remove trailing comma + space (, ) after last set of assignments here for polish
 # Encapsulates boilerplate for writing the loadings lists in bullet point form
 def write_top_loadings_list(p, unit_mass: float, assign: str):
     # Add all m/z ratios and their corresponding assignments (if we can get them)

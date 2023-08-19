@@ -182,12 +182,12 @@ class pca_sims(object):
         # Do the same process as above to get the measured masses 'document_mass' column into the correct format (i.e., there are a bunch of floats and strings in this column; make sure to put all into lists
         # of strings so species_classifier will process them correctly)
         for i in self.measured_masses.index:
-            measured_mass = str(self.measured_masses.loc[i, 'document_mass'])
+            m_document_mass = str(self.measured_masses.loc[i, 'document_mass'])
             self.measured_masses.loc[i, 'document_mass'] = ''
 
-            measured_mass = measured_mass.split(',')
-            measured_mass = [float(mass) for mass in measured_mass]
-            self.measured_masses.at[i, 'document_mass'] = measured_mass
+            m_document_mass = m_document_mass.split(',')
+            m_document_mass = [float(mass) for mass in m_document_mass]
+            self.measured_masses.at[i, 'document_mass'] = m_document_mass
 
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         #     print("measured_masses: ", self.measured_masses)
@@ -198,6 +198,8 @@ class pca_sims(object):
                                                                                                       self.mass_id['document_mass'], 
                                                                                                       doc_mass_list, 
                                                                                                       species_list, 5)
+        # TODO Remove the uncertainty / top n calculations now that measured_mass isn't used for separate probability calculations?
+        # TODO If keeping, deal with problem where fewer than 2 entries in measured_masses causes div by 0 error
         # Do the same for the measured masses; we keep track of them so the user can see the peak assignments and probabilities corresponding to these values on 
         # the next run of PCA analysis
         self.classifier_measured, self.rel_prob_matrix_measured, self.top_n_species_measured = self.classify_species(self.measured_masses['measured_mass'],
@@ -268,12 +270,12 @@ class pca_sims(object):
         # TODO Apply Group Numbers.txt filtering to the loading tables (not just the PCA plots)
         positive_loading_table=pd.DataFrame(
             data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
-                  "Probabilities (from Measured Mass)":[" "]*fetchn_more, "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
+                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Deviation from Document Mass":[" "]*fetchn_more, 
+                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
             data={"- Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (from Measured Mass)":[" "]*fetchn_more, 
-                  "Probabilities (from Measured Mass)":[" "]*fetchn_more, "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
+                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Deviation from Document Mass":[" "]*fetchn_more, 
+                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         
         # TODO Fix masses that are off by too much going to another slot (maybe output error message to user that mass entered is too far off from doc value?)
         # Extract the species classifications (as strings) from each of the top n options, but only if the lists are nonempty to prevent errors
@@ -300,9 +302,8 @@ class pca_sims(object):
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
-                    positive_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
-                    positive_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
-                    positive_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
+                    positive_loading_table.at[ind, "Measured Mass"] = self.measured_masses.at[i, 'measured_mass']
+                    positive_loading_table.at[ind, "Deviation from Document Mass"] = self.measured_masses.at[i, 'deviation']
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
         for ind in negative_loading_table.index:
@@ -322,9 +323,8 @@ class pca_sims(object):
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
-                    negative_loading_table.at[ind, "Measured Mass"] = self.top_n_species_measured[i][0]
-                    negative_loading_table.at[ind, "Peak Assignment (from Measured Mass)"] = self.top_n_species_measured[i][1]
-                    negative_loading_table.at[ind, "Probabilities (from Measured Mass)"] = self.top_n_species_measured[i][2]
+                    negative_loading_table.at[ind, "Measured Mass"] = self.measured_masses.at[i, 'measured_mass']
+                    negative_loading_table.at[ind, "Deviation from Document Mass"] = self.measured_masses.at[i, 'deviation']
         negative_loading_table.index = negative_loading_table["Unit Mass"]
 
         # print(loading_table)
@@ -637,19 +637,20 @@ class pca_sims(object):
             # Iterate over all rows in table
             for row in table.rows:
                 # TODO Highlight last two columns differently
-                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is Updated Peak Assignment based on Measured Mass, index 7
-                # is Probabilities from Measured Mass, index 8 is Updated Peak Assignment, and index 9 is Updated Document Mass
+                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is deviation from measured mass, index 7 is Updated Peak Assignment, 
+                # and index 8 is Updated Document Mass
                 cur_header_start = row.cells[0].text
-                cur_doc_mass = format_user_input(row.cells[2].text)
+                cur_doc_mass = format_user_input(row.cells[2].text).split(",")[0]
                 cur_measured_mass = format_user_input(row.cells[5].text)
-                cur_updated_peak_assignment = format_user_input(row.cells[8].text)
-                cur_updated_doc_mass = format_user_input(row.cells[9].text)
+                cur_updated_peak_assignment = format_user_input(row.cells[7].text)
+                cur_updated_doc_mass = format_user_input(row.cells[8].text)
 
                 # Update the measured masses if there is one in this row
                 if not ('No.' in cur_header_start) and cur_measured_mass and (not cur_measured_mass in measured_mass['measured_mass'].values):
                     mm_size = len(measured_mass.index)
                     measured_mass.loc[mm_size, 'document_mass'] = cur_doc_mass
                     measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass
+                    measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(float(cur_measured_mass) - float(cur_doc_mass)), 6))
 
                 # Ignore the header at the top of the column and rows without any updates
                 if not ('No.' in cur_header_start) and (cur_updated_doc_mass or cur_updated_peak_assignment):

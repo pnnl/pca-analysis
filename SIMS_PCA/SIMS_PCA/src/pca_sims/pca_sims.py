@@ -645,8 +645,8 @@ class pca_sims(object):
                 cur_updated_peak_assignment = format_user_input(row.cells[7].text)
                 cur_updated_doc_mass = format_user_input(row.cells[8].text)
 
-                # Update the measured masses if there is one in this row
-                if not ('No.' in cur_header_start) and cur_measured_mass and (not cur_measured_mass in measured_mass['measured_mass'].values):
+                # Update the measured masses if there is one in this row and we don't already have it in the DataFrame
+                if not ('No.' in cur_header_start) and cur_measured_mass and (not cur_measured_mass in list(measured_mass['measured_mass'].values)):
                     mm_size = len(measured_mass.index)
                     measured_mass.loc[mm_size, 'document_mass'] = cur_doc_mass
                     measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass

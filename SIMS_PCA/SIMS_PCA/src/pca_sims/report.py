@@ -9,6 +9,7 @@ from docx.shared import Inches
 from docx.oxml import OxmlElement, ns
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, Inches, Cm
+from docx.shared import RGBColor
 
 import pandas as pd
 
@@ -221,30 +222,45 @@ def document_add_table(document:Document, df:pd.DataFrame):
     # 4) Value is any non-list entity - convert it to a string and add it to the cell
     for i in range(df.shape[0]):
         for j in range(df.shape[-1]):
-            cur_entry = df.values[i,j]
+            cur_group = df.values[i,j]
             # We expect each group to be either a nested list of lists or a single-depth list, which we handle with the if case here; if list is empty, also default to the 1st case
-            if not cur_entry or not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
+            if not cur_group or not isinstance(cur_group, list) or not isinstance(cur_group[0], list):
                 group_size = 1
             else:
-                group_size = len(cur_entry)
+                group_size = len(cur_group)
 
             # Iterate over multiple sublists of the current dataframe entry, but only if it has a nested list structure
             for k in range(group_size):
-                if not cur_entry or not isinstance(cur_entry, list) or not isinstance(cur_entry[0], list):
-                    cur_group = cur_entry
+                if not cur_group or not isinstance(cur_group, list) or not isinstance(cur_group[0], list):
+                    cur_entry = cur_group
                 else:
-                    cur_group = cur_entry[k]
+                    cur_entry = cur_group[k]
 
-                if str(cur_group) == 'nan':
-                    t.cell(i+1,j).text = ''
-                elif isinstance(cur_group, list) and (not cur_entry or not is_float(cur_group[0])):
-                    p_species = t.cell(i+1,j).add_paragraph()
-                    document_add_assignment(p_species, cur_group, in_table=True)
-                elif isinstance(cur_group, list) and (not cur_entry or is_float(cur_group[0])):
-                    p_probs = t.cell(i+1,j).add_paragraph()
-                    p_probs.add_run('\n'.join(map(str, cur_group)))
-                else:
-                    t.cell(i+1,j).text = str(cur_group)
+                p = t.cell(i+1,j).add_paragraph()
+                if str(cur_entry) == 'nan':                                                             # Do nothing for entries that are not a number
+                    p.add_run('')
+                elif isinstance(cur_entry, list) and (not cur_group or not is_float(cur_entry[0])):     # Species classifications
+                    document_add_assignment(p, cur_entry, in_table=True)
+                elif isinstance(cur_entry, list) and (not cur_group or is_float(cur_entry[0])):         # Probabilities
+                    p.add_run('\n'.join(map(str, cur_entry)))
+                else:                                                                                   # Anything else              
+                    p.add_run(str(cur_entry))
+                
+                # Change text color to yellow if deviation is 100-200ppm and red if deviation is > 200ppm. Check the column header; only do this if 
+                # we are in the 'deviation' column.
+                header_text = t.cell(0,j).text
+                if header_text == 'Deviation from Document Mass' and t.cell(i+1,j).text.strip():
+                    cur_measured_mass = t.cell(i+1,j-1).text.strip()
+                    fractional_deviation = float(cur_entry) / float(cur_measured_mass)
+                    if fractional_deviation > 0.0001 and fractional_deviation < 0.0002:
+                        for run in p.runs:
+                            font_yellow = run.font
+                            font_yellow.color.rgb = RGBColor(219, 165, 7)
+                    elif fractional_deviation > 0.0002:
+                        for run in p.runs:
+                            font_red = run.font
+                            font_red.color.rgb = RGBColor(255, 0, 0)
+
 
 
 # TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)

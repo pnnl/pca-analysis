@@ -92,14 +92,18 @@ class species_classifier:
         rel_prob_matrix = self.rel_prob_matrix
         top_n_list = []
 
-        # TODO Also cut off species with probability less than 1%?
+        # TODO Expose raw_probability_condition probability to user? (currently 5%)
         # Increment that tells us which test mass to compare with our precise masses each loop
         row_index = 0
         # Round probabilities to 3 decimal places for succinctness later and order probabilities from greatest to least
         for row in rel_prob_matrix:
-            # Get the indices of the most likely candidates in decreasing order of probability; throw out candidates too far away from the target
+            # Get the indices of the most likely candidates in decreasing order of probability; throw out candidates that are:
+            # 1) too far away from the target; and
+            # 2) below a certain raw probability of being the correct ID
             ind_n = np.flip(np.argsort(row)[-n:])
-            ind_n = ind_n[abs(masses_document[ind_n] - masses_test[row_index]) < 0.5]
+            closeness_condition = np.array(abs(masses_document[ind_n] - masses_test[row_index]) < 0.5)
+            raw_probability_condition = np.array(row[ind_n] > 0.05)
+            ind_n = ind_n[closeness_condition & raw_probability_condition]
 
             top_n_ref_masses = masses_document[ind_n]
             top_n_species_names = species_document[ind_n]

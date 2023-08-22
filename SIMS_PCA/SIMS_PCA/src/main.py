@@ -8,7 +8,9 @@ logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
 from pca_sims.pca_sims import pca_sims
 
-# The main PCA folder (if storing your data on Windows, this is probably
+
+# ------------------------------------------------- VALUES THAT USERS MAY NEED TO CHANGE -------------------------------------------------
+# The main PCA folder (for example, if storing your data on Windows at PNNL, this could be
 # /mnt/c/Users/<INSERT USERNAME>/OneDrive - PNNL/Documents/pca/SIMS_PCA/SIMS_PCA).
 pcaDir = "/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA"
 
@@ -17,10 +19,10 @@ outDir = os.path.join(pcaDir, 'output_sample')
 
 # TODO Implement GUI using CustomTkinter to get positive_or_negative_ion, f_rawsims_data, f_metadata, and f_report from user
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'negative'
+positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Negative.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
 
 # Store the subset of groups from the data above which the user wants to analyze
 f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/Group Numbers.txt')
@@ -30,6 +32,8 @@ f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
 
 # SIMS-PCA report
 f_report = os.path.join(pcaDir, 'output_sample/report.docx')
+# -----------------------------------------------------------------------------------------------------------------------------------------
+
 
 # Document positive and negative mass
 f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")

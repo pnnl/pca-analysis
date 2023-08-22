@@ -93,6 +93,7 @@ class pca_sims(object):
         self.mass_id['raw_mass'] = mass_raw
         self.mass_id.sort_values(by=['raw_mass'], inplace=True)
 
+        # TODO Currently, measured masses from previous document disappear upon switching from positive to negative document or vice versa. Is this fine?
         # Save the measured masses for ID later
         self.measured_masses = pd.read_csv('SIMS_PCA/SIMS_PCA/sims-data/measured_masses.csv')
 
@@ -179,8 +180,9 @@ class pca_sims(object):
                 doc_mass_list.extend(document_mass)
                 species_list.extend(assignment)
 
-        # Do the same process as above to get the measured masses 'document_mass' column into the correct format (i.e., there are a bunch of floats and strings in this column; make sure to put all into lists
-        # of strings so species_classifier will process them correctly)
+        # Do the same process as above to get the measured masses 'document_mass' column into the correct format (i.e., there are a 
+        # bunch of floats and strings in this column; make sure to put all into lists of strings so species_classifier will process 
+        # them correctly)
         for i in self.measured_masses.index:
             m_document_mass = str(self.measured_masses.loc[i, 'document_mass'])
             self.measured_masses.loc[i, 'document_mass'] = ''
@@ -277,10 +279,9 @@ class pca_sims(object):
                   "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Deviation from Document Mass":[" "]*fetchn_more, 
                   "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         
-        # TODO Fix masses that are off by too much going to another slot (maybe output error message to user that mass entered is too far off from doc value?)
         # Extract the species classifications (as strings) from each of the top n options, but only if the lists are nonempty to prevent errors
-        top_n_species_measured_ids = np.array([sub_list[1][0] if sub_list[1] else '' for sub_list in self.top_n_species_measured])
-        n = len(top_n_species_measured_ids)
+        top_n_species_measured_doc_masses = np.array([float(sub_list[0][0]) if sub_list[0] else np.nan for sub_list in self.top_n_species_measured])
+        n = len(top_n_species_measured_doc_masses)
 
         # Fill loading tables with Document Masses and their corresponding species assignments + probabilities
         for ind in positive_loading_table.index:
@@ -292,13 +293,15 @@ class pca_sims(object):
             positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
             positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
 
+            # TODO cur_species_repeated (floats) and top_n_species_measured_doc_masses (strings) can't be directly compared without ERRORS if there is a single
+            # empty string '' in top_n_species_measured_doc_masses; convert both to floats and use np.isclose().
             # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
             # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
             # the current peak assignment
             if (positive_loading_table.at[ind, "Document Mass"] and positive_loading_table.at[ind, "Initial Peak Assignment"]):
-                cur_species_repeated = np.repeat(positive_loading_table.at[ind, "Initial Peak Assignment"][0], n)
-                matching_array = cur_species_repeated == top_n_species_measured_ids
+                cur_species_repeated = np.repeat(positive_loading_table.at[ind, "Document Mass"][0], n)
+                matching_array = np.isclose(cur_species_repeated, top_n_species_measured_doc_masses, rtol=1e-05, atol=1e-08, equal_nan=False)      # TODO Gives a FutureWarning; FIX by making both np or Python
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
@@ -318,8 +321,8 @@ class pca_sims(object):
             # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
             # the current peak assignment
             if (negative_loading_table.at[ind, "Document Mass"] and negative_loading_table.at[ind, "Initial Peak Assignment"]):
-                cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Initial Peak Assignment"][0], n)
-                matching_array = cur_species_repeated == top_n_species_measured_ids
+                cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Document Mass"][0], n)
+                matching_array = np.isclose(cur_species_repeated, top_n_species_measured_doc_masses, rtol=1e-05, atol=1e-08, equal_nan=False)      # TODO Gives a FutureWarning; FIX by making both np or Python
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)

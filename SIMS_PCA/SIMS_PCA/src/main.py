@@ -78,8 +78,9 @@ else:
     pcasims.perform_pca()
 
     # Identify chemical components based on existing document mass; use user-specified string positive_or_negative_ion
-    # to distinguish whether we should analyze using data from the .csv file containing + or - ions
-    pcasims.identify_components_from_file(2)
+    # to distinguish whether we should analyze using data from the .csv file containing + or - ions.
+    # n is the maximum number of species classification possibilities to display in the table; change to desired value if needed.
+    pcasims.identify_components_from_file(n=2)
 
     # Plot PCA result
     pcasims.plot_pca_result()

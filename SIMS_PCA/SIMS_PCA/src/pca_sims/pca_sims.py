@@ -132,7 +132,6 @@ class pca_sims(object):
         self._get_loading_scores()
     
 
-    # TODO Expose number of top n species in main.py?
     # Use the species_classifier class to assign IDs and probabilities to the PCA data using mass_id
     # Params:
     #       mass_id - This DataFrame includes the raw masses to be tested
@@ -156,7 +155,7 @@ class pca_sims(object):
     # Identify the PCA components using the file we are given.
     # Params:
     #   n - The number of species we desire to display in the report from the top n most probable ID candidates
-    def identify_components_from_file(self, n: int):
+    def identify_components_from_file(self, n:int=2):
         """Identify chemical components from the file passed to pca_sims."""
         print('-------->Finding assigned unit masses from file...')
         doc_mass = self.doc_mass
@@ -296,7 +295,6 @@ class pca_sims(object):
             positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
             positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
 
-            # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
             # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
             # the current peak assignment
@@ -317,7 +315,6 @@ class pca_sims(object):
             negative_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
             negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
 
-            # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
             # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
             # the current peak assignment
@@ -626,7 +623,6 @@ class pca_sims(object):
     #      duplicate updates? If so, how does this code behave? Perhaps we need to have user enter updates in 
     #      a place without possible duplicates.
     # TODO Perhaps add functionality to tack on updated classifications to the end of old species classifications instead of overwriting them?
-    # TODO Implement selectable data files from subset of 000-099
     # Update the assignment documents using user-entered masses and the peak assignments
     # Parameters:
     #   positive_or_negative_ion - Distinguishes whether to update positive_doc_mass_record.csv (if = 'positive') or negative_doc_mass_record.csv (if = 'negative')
@@ -640,8 +636,7 @@ class pca_sims(object):
         for table in report.tables:
             # Iterate over all rows in table
             for row in table.rows:
-                # TODO Highlight last two columns differently
-                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is deviation from measured mass, index 7 is Updated Peak Assignment, 
+                # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is qualified peak assignment, index 7 is Updated Peak Assignment, 
                 # and index 8 is Updated Document Mass
                 cur_header_start = row.cells[0].text
                 cur_doc_mass = format_user_input(row.cells[2].text).split(",")[0]

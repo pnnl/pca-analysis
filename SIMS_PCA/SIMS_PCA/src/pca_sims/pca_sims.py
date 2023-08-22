@@ -153,7 +153,10 @@ class pca_sims(object):
         return classifier, rel_prob_matrix, top_n_species
 
 
-    def identify_components_from_file(self):
+    # Identify the PCA components using the file we are given.
+    # Params:
+    #   n - The number of species we desire to display in the report from the top n most probable ID candidates
+    def identify_components_from_file(self, n: int):
         """Identify chemical components from the file passed to pca_sims."""
         print('-------->Finding assigned unit masses from file...')
         doc_mass = self.doc_mass
@@ -199,7 +202,7 @@ class pca_sims(object):
         self.classifier_doc, self.rel_prob_matrix_doc, self.top_n_species_doc = self.classify_species(self.mass_id['raw_mass'], 
                                                                                                       self.mass_id['document_mass'], 
                                                                                                       doc_mass_list, 
-                                                                                                      species_list, 5)
+                                                                                                      species_list, n)
         # TODO Remove the uncertainty / top n calculations now that measured_mass isn't used for separate probability calculations?
         # TODO If keeping, deal with problem where fewer than 2 entries in measured_masses causes div by 0 error
         # Do the same for the measured masses; we keep track of them so the user can see the peak assignments and probabilities corresponding to these values on 
@@ -207,7 +210,7 @@ class pca_sims(object):
         self.classifier_measured, self.rel_prob_matrix_measured, self.top_n_species_measured = self.classify_species(self.measured_masses['measured_mass'],
                                                                                                                     self.measured_masses['document_mass'], 
                                                                                                                     doc_mass_list, 
-                                                                                                                    species_list, 5)
+                                                                                                                    species_list, n)
 
 
     def plot_pca_result(
@@ -272,11 +275,11 @@ class pca_sims(object):
         # TODO Apply Group Numbers.txt filtering to the loading tables (not just the PCA plots)
         positive_loading_table=pd.DataFrame(
             data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Deviation from Document Mass":[" "]*fetchn_more, 
+                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (Qualified)":[" "]*fetchn_more, 
                   "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         negative_loading_table=pd.DataFrame(
             data={"- Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Deviation from Document Mass":[" "]*fetchn_more, 
+                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (Qualified)":[" "]*fetchn_more, 
                   "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
         
         # Extract the species classifications (as strings) from each of the top n options, but only if the lists are nonempty to prevent errors
@@ -304,7 +307,7 @@ class pca_sims(object):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
                     positive_loading_table.at[ind, "Measured Mass"] = self.measured_masses.at[i, 'measured_mass']
-                    positive_loading_table.at[ind, "Deviation from Document Mass"] = self.measured_masses.at[i, 'deviation']
+                    positive_loading_table.at[ind, "Peak Assignment (Qualified)"] = positive_loading_table.at[ind, "Initial Peak Assignment"]
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
         for ind in negative_loading_table.index:
@@ -325,7 +328,7 @@ class pca_sims(object):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
                     negative_loading_table.at[ind, "Measured Mass"] = self.measured_masses.at[i, 'measured_mass']
-                    negative_loading_table.at[ind, "Deviation from Document Mass"] = self.measured_masses.at[i, 'deviation']
+                    negative_loading_table.at[ind, "Peak Assignment (Qualified)"] = negative_loading_table.at[ind, "Initial Peak Assignment"]
         negative_loading_table.index = negative_loading_table["Unit Mass"]
 
         # print(loading_table)
@@ -348,7 +351,7 @@ class pca_sims(object):
                                     positive_loading_table, negative_loading_table, signals)
 
         # Table page
-        self.report.write_table_page(pcacomp, self.positive_ion, positive_loading_table, negative_loading_table)
+        self.report.write_table_page(pcacomp, self.positive_ion, positive_loading_table, negative_loading_table, self.measured_masses)
 
         # Analysis page
         self.report.write_analysis_page(pcacomp, self.positive_ion, 

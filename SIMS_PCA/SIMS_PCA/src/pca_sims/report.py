@@ -12,6 +12,7 @@ from docx.shared import Pt, Inches, Cm
 from docx.shared import RGBColor
 
 import pandas as pd
+import numpy as np
 
 class pca_sims_report(object):
 
@@ -120,9 +121,9 @@ class pca_sims_report(object):
     # Writes a PCA loading table to the document. Columns are:
     # No. # | Unit Mass | Document Mass | Initial Peak Assignment | Initial Probabilities | Measured Mass | Updated Peak Assignment (from Measured Mass)
     #  | Updated Peak Assignment (from Document Mass) | Updated Document Mass
-    def write_table_page(self, pcacomp:int, positive_ion:bool,
-                         p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame, 
-     ):
+    def write_table_page(self, pcacomp:int, positive_ion:bool, 
+                         p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame,
+                         measured_masses:pd.DataFrame):
         document = self.document
         sign_ion = 'Positive' if positive_ion else 'Negative'
 
@@ -133,7 +134,7 @@ class pca_sims_report(object):
         document.add_heading('{} ion spectra, top positive loadings -- PC{}'.format(sign_ion, pcacomp), 1)
 
         # Write positive loading values ...
-        document_add_table(document, p_loading_table)
+        document_add_table(document, p_loading_table, measured_masses)
         
         # Start a new page
         document.add_page_break()
@@ -142,7 +143,7 @@ class pca_sims_report(object):
         document.add_heading('{} ion spectra, top negative loadings -- PC{}'.format(sign_ion, pcacomp), 1)
 
         # Write negative loading values ...
-        document_add_table(document, n_loading_table)
+        document_add_table(document, n_loading_table, measured_masses)
 
 
     def write_analysis_page(self, pcacomp:int, positive_ion:bool, 
@@ -206,7 +207,7 @@ class pca_sims_report(object):
 
 # TODO Remove extraneous \n at start of every entry to shrink table size
 # Add a table to the end and create a reference variable along with an extra header row
-def document_add_table(document:Document, df:pd.DataFrame):
+def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.DataFrame):
     # Create number of rows + columns corresponding to the dataframe's size
     t = document.add_table(df.shape[0]+1, df.shape[1])
     t.style = 'Table Grid'
@@ -247,11 +248,16 @@ def document_add_table(document:Document, df:pd.DataFrame):
                     p.add_run(str(cur_entry))
                 
                 # Change text color to yellow if deviation is 100-200ppm and red if deviation is > 200ppm. Check the column header; only do this if 
-                # we are in the 'deviation' column.
+                # we are in the column 'Peak Assignment (Qualified)' so we can calculate the deviation.
                 header_text = t.cell(0,j).text
-                if header_text == 'Deviation from Document Mass' and t.cell(i+1,j).text.strip():
-                    cur_measured_mass = t.cell(i+1,j-1).text.strip()
-                    fractional_deviation = float(cur_entry) / float(cur_measured_mass)
+                if header_text == 'Peak Assignment (Qualified)' and t.cell(i+1,j).text.strip():
+                    # Calculate the deviation by filtering for the current measured mass in the measured_masses DataFrame that was passed to us.
+                    cur_measured_mass = float(t.cell(i+1,j-1).text.strip())
+                    measured_masses_filtered = measured_masses[np.isclose(measured_masses['measured_mass'], cur_measured_mass, rtol=1e-05, atol=1e-08, equal_nan=False)]
+                    # Get deviation from first row of filtered measured_masses; note that in measured_masses, column 2 is 'deviation'
+                    cur_deviation = measured_masses_filtered.iloc[0][2]
+                    fractional_deviation = cur_deviation / cur_measured_mass
+
                     if fractional_deviation > 0.0001 and fractional_deviation < 0.0002:
                         for run in p.runs:
                             font_yellow = run.font
@@ -260,7 +266,6 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         for run in p.runs:
                             font_red = run.font
                             font_red.color.rgb = RGBColor(255, 0, 0)
-
 
 
 # TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)

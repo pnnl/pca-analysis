@@ -236,7 +236,8 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                     cur_entry = cur_group
                 else:
                     cur_entry = cur_group[k]
-
+                
+                # TODO For some reason, Al / C2H3 (26.981,27.02,0.039 in MM .csv file) are not getting their MM values written to the report?
                 p = t.cell(i+1,j).add_paragraph()
                 if str(cur_entry) == 'nan':                                                             # Do nothing for entries that are not a number
                     p.add_run('')
@@ -248,24 +249,30 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                     p.add_run(str(cur_entry))
                 
                 # Change text color to yellow if deviation is 100-200ppm and red if deviation is > 200ppm. Check the column header; only do this if 
-                # we are in the column 'Peak Assignment (Qualified)' so we can calculate the deviation.
+                # we are in the column 'Peak Assignment (Qualified)' (and if there is actually a value in the current cell of that column) so we can
+                # calculate the deviation.
                 header_text = t.cell(0,j).text
                 if header_text == 'Peak Assignment (Qualified)' and t.cell(i+1,j).text.strip():
-                    # Calculate the deviation by filtering for the current measured mass in the measured_masses DataFrame that was passed to us.
+                    # Save the current measured mass (1 cell to the left) and list of document masses (4 cells to the left). Make sure to transform the doc
+                    # masses into a NumPy array of floats, from which we can get the list of deviations between the measured mass and doc masses by broadcasting.
                     cur_measured_mass = float(t.cell(i+1,j-1).text.strip())
-                    measured_masses_filtered = measured_masses[np.isclose(measured_masses['measured_mass'], cur_measured_mass, rtol=1e-05, atol=1e-08, equal_nan=False)]
-                    # Get deviation from first row of filtered measured_masses; note that in measured_masses, column 2 is 'deviation'
-                    cur_deviation = measured_masses_filtered.iloc[0][2]
-                    fractional_deviation = cur_deviation / cur_measured_mass
-
-                    if fractional_deviation > 0.0001 and fractional_deviation < 0.0002:
+                    cur_doc_masses = np.array(t.cell(i+1,j-4).text.strip().split("\n"))
+                    cur_doc_masses = cur_doc_masses.astype(float)
+                    
+                    # Get deviation from first row of filtered measured_masses; note that in measured_masses, column index 2 is 'deviation'
+                    cur_deviations = abs(cur_measured_mass - cur_doc_masses)
+                    fractional_deviations = cur_deviations / cur_measured_mass
+                    
+                    # TODO Fix so font colors aren't overwritten; need to actually assign separate font colors to each species
+                    # Iterate over each run in the current paragraph and assign it the correct font color
+                    for fdev in fractional_deviations:
                         for run in p.runs:
-                            font_yellow = run.font
-                            font_yellow.color.rgb = RGBColor(219, 165, 7)
-                    elif fractional_deviation > 0.0002:
-                        for run in p.runs:
-                            font_red = run.font
-                            font_red.color.rgb = RGBColor(255, 0, 0)
+                            if fdev > 0.0001 and fdev < 0.0002:
+                                font_yellow = run.font
+                                font_yellow.color.rgb = RGBColor(219, 165, 7)
+                            elif fdev > 0.0002:
+                                font_red = run.font
+                                font_red.color.rgb = RGBColor(255, 0, 0)
 
 
 # TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)

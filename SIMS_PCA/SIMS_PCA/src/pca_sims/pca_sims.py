@@ -629,7 +629,7 @@ class pca_sims(object):
     def update_classifications(self, f_doc_mass:str, f_report:str):
         doc_mass = pd.read_csv(f_doc_mass)
         doc_mass.set_index(doc_mass['Unit Mass'], inplace=True)
-        measured_mass = pd.DataFrame({'document_mass':[], 'measured_mass':[]})
+        measured_mass = pd.DataFrame({'document_mass':[], 'measured_mass':[], 'deviation':[]})
         report = docx.Document(f_report)
 
         # Iterate over all tables in document
@@ -645,7 +645,7 @@ class pca_sims(object):
                 cur_updated_doc_mass = format_user_input(row.cells[8].text)
 
                 # Update the measured masses if there is one in this row and we don't already have it in the DataFrame
-                if not ('No.' in cur_header_start) and cur_measured_mass and (not cur_measured_mass in list(measured_mass['measured_mass'].values)):
+                if not ('No.' in cur_header_start) and cur_measured_mass and (not cur_doc_mass in list(measured_mass['document_mass'].values)):
                     mm_size = len(measured_mass.index)
                     measured_mass.loc[mm_size, 'document_mass'] = cur_doc_mass
                     measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass

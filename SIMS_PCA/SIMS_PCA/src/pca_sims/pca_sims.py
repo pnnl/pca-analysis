@@ -293,15 +293,13 @@ class pca_sims(object):
             positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
             positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
 
-            # TODO cur_species_repeated (floats) and top_n_species_measured_doc_masses (strings) can't be directly compared without ERRORS if there is a single
-            # empty string '' in top_n_species_measured_doc_masses; convert both to floats and use np.isclose().
             # TODO For robustness, in future, don't just check first elements of top_n_species_measured_ids and cur_species_repeated - check all of them.
             # There are likely many blank cells in the Measured Mass column. We match the peak assignment to the species in top_n_species_measured to ensure we skip these blank cells
             # As a precondition, check first whether there is any assignment at all in the current row to analyze, then whether any of the top n species match
             # the current peak assignment
             if (positive_loading_table.at[ind, "Document Mass"] and positive_loading_table.at[ind, "Initial Peak Assignment"]):
                 cur_species_repeated = np.repeat(positive_loading_table.at[ind, "Document Mass"][0], n)
-                matching_array = np.isclose(cur_species_repeated, top_n_species_measured_doc_masses, rtol=1e-05, atol=1e-08, equal_nan=False)      # TODO Gives a FutureWarning; FIX by making both np or Python
+                matching_array = np.isclose(cur_species_repeated, top_n_species_measured_doc_masses, rtol=1e-05, atol=1e-08, equal_nan=False)
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
@@ -322,7 +320,7 @@ class pca_sims(object):
             # the current peak assignment
             if (negative_loading_table.at[ind, "Document Mass"] and negative_loading_table.at[ind, "Initial Peak Assignment"]):
                 cur_species_repeated = np.repeat(negative_loading_table.at[ind, "Document Mass"][0], n)
-                matching_array = np.isclose(cur_species_repeated, top_n_species_measured_doc_masses, rtol=1e-05, atol=1e-08, equal_nan=False)      # TODO Gives a FutureWarning; FIX by making both np or Python
+                matching_array = np.isclose(cur_species_repeated, top_n_species_measured_doc_masses, rtol=1e-05, atol=1e-08, equal_nan=False)
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)

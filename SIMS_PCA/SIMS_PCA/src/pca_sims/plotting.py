@@ -22,8 +22,8 @@ params={
     # 'font.style':'italic',
     # 'font.weight':'bold', 
     'axes.labelsize': '28',
-    'xtick.labelsize':'28',
-    'ytick.labelsize':'28',
+    'xtick.labelsize':'15',
+    'ytick.labelsize':'15',
     'lines.linewidth':3,
     'lines.markersize':10,
     'legend.fontsize': '25',
@@ -53,7 +53,6 @@ def plot_pca_result(
 
     per_varEx=np.round(pca.explained_variance_ratio_*100,decimals=2)[:10]
     labelsEx=['PC'+str(x) for x in range(1, 11)]
-    # fig_screeplot = pcaDir+'output/'+'Scree Plot'+'.png'
     fig_screeplot = os.path.join(pcaDir, outDir, 'Scree Plot.png')
     try:
         scree=pd.DataFrame(per_varEx)
@@ -64,8 +63,8 @@ def plot_pca_result(
         plt.tick_params(labelsize=15)
         for a,b in zip(np.arange(11)+1,np.array(per_varEx)):
             plt.text(a, b+0.05, '%.2f' % b, ha='center', va= 'bottom',fontsize=12)
-        plt.ylabel('Percentage of Explained Variance',fontsize=18, fontname = 'Times New Roman', fontweight = 'bold')
-        plt.xlabel('Principal Component',fontsize=18, fontname = 'Times New Roman', fontweight = 'bold')
+        plt.ylabel('Percentage of Explained Variance', fontsize=15, fontname = 'Times New Roman', fontweight = 'bold')
+        plt.xlabel('Principal Component',fontsize=15, fontname = 'Times New Roman', fontweight = 'bold')
         plt.title('Scree Plot')
         plt.tight_layout()
         plt.savefig(fig_screeplot,dpi=dpi)
@@ -173,7 +172,6 @@ def plot_pca_result(
                         ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
                     plt.legend(figroup,legend_labels,loc='center left', bbox_to_anchor=(1, 0.5))
                     # plt.tight_layout()
-                    # fig_scores = pcaDir+'output/'+'Origin_PC'+str(j)+'PC'+str(k)+'.png' 
                     fig_scores = os.path.join(pcaDir, outDir, 'Origin_PC'+str(j)+'PC'+str(k)+'.png')
                     plt.savefig(fig_scores, bbox_inches='tight',dpi=dpi)
                     #plt.show()
@@ -239,20 +237,14 @@ def plot_pca_result(
                 figroup.append(plt.scatter(x_positions,heights, color=colorn[i],marker=markern[i]))
 
             bottom, top = plt.ylim()
-            # for i,label in enumerate(grouplabel):
-            #     plt.text(x=10*(i+1),y=bottom-(top-bottom)/10,s=legend_labels[i],fontsize=28,rotation=15\
-            #         ,fontname = 'Times New Roman', fontweight = 'bold', verticalalignment='center', horizontalalignment='center')
+            
             plt.xlabel('Experiments',fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
             plt.ylabel('PC'+str(pc)+' Scores'+' ('+str(per_varEx[pc-1])+'%)'\
                 ,fontsize=28, fontname = 'Times New Roman', fontweight = 'bold')
             plt.legend(figroup,legend_labels,loc='center left', bbox_to_anchor=(1, 0.5))
-            # plt.legend(figroup,legend_labels,ncol=2,loc='center left', bbox_to_anchor=(0., -0.3))
-            # plt.legend(figroup,legend_labels,ncol=2,loc='center left', bbox_to_anchor=(0., -0.5))
-            # plt.tight_layout()
-            # fig_score_single = pcaDir+'output/'+'PC_scores_'+'PC'+str(pc)+'.png'
+            
             fig_score_single = os.path.join(pcaDir, outDir, 'PC_scores_'+'PC'+str(pc)+'.png')
             plt.savefig(fig_score_single, bbox_inches='tight',dpi=dpi)
-            #plt.show()
             plt.close()
             fig_scores_single_set.append(fig_score_single)
 

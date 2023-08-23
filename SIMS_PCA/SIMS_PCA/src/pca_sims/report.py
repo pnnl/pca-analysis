@@ -24,10 +24,10 @@ class pca_sims_report(object):
         # Set the page margins
         sections = self.document.sections
         for section in sections:
-            section.top_margin = Inches(0.625)
-            section.bottom_margin = Inches(0.625)
-            section.left_margin = Inches(0.625)
-            section.right_margin = Inches(0.625)
+            section.top_margin = Inches(0.4)
+            section.bottom_margin = Inches(0.4)
+            section.left_margin = Inches(0.4)
+            section.right_margin = Inches(0.4)
 
         # Title page
         self._create_title_page(ion_sign)
@@ -35,7 +35,7 @@ class pca_sims_report(object):
     
     def _create_title_page(self, ion_sign:str):
         document = self.document
-        document.add_heading("\t\tPCA-SIMS Spectra Analysis Report", 0)
+        document.add_heading("\t\t\tPCA-SIMS Spectra Analysis Report", 0)
 
         # Add author and time
         description = self.description
@@ -205,7 +205,6 @@ class pca_sims_report(object):
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
 
-# TODO Remove extraneous \n at start of every entry to shrink table size
 # Add a table to the end and create a reference variable along with an extra header row
 def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.DataFrame):
     # Create number of rows + columns corresponding to the dataframe's size
@@ -237,15 +236,14 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                 else:
                     cur_entry = cur_group[k]
                 
-                # TODO For some reason, Al / C2H3 (26.981,27.02,0.039 in MM .csv file) are not getting their MM values written to the report?
                 p = t.cell(i+1,j).add_paragraph()
                 if str(cur_entry) == 'nan':                                                             # Do nothing for entries that are not a number
                     p.add_run('')
-                elif isinstance(cur_entry, list) and (not cur_group or not is_float(cur_entry[0])):     # Species classifications
+                elif isinstance(cur_entry, list) and (not cur_group or not is_float(cur_entry[0])):     # Lists of species classifications
                     document_add_assignment(p, cur_entry, in_table=True)
-                elif isinstance(cur_entry, list) and (not cur_group or is_float(cur_entry[0])):         # Probabilities
+                elif isinstance(cur_entry, list) and (not cur_group or is_float(cur_entry[0])):         # Probabilities and lists of document masses
                     p.add_run('\n'.join(map(str, cur_entry)))
-                else:                                                                                   # Anything else              
+                else:                                                                                   # Anything else
                     p.add_run(str(cur_entry))
                 
                 # Change text color to yellow if deviation is 100-200ppm and red if deviation is > 200ppm. Check the column header; only do this if 
@@ -263,16 +261,36 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                     cur_deviations = abs(cur_measured_mass - cur_doc_masses)
                     fractional_deviations = cur_deviations / cur_measured_mass
                     
-                    # TODO Fix so font colors aren't overwritten; need to actually assign separate font colors to each species
                     # Iterate over each run in the current paragraph and assign it the correct font color
-                    for fdev in fractional_deviations:
-                        for run in p.runs:
-                            if fdev > 0.0001 and fdev < 0.0002:
-                                font_yellow = run.font
-                                font_yellow.color.rgb = RGBColor(219, 165, 7)
-                            elif fdev > 0.0002:
-                                font_red = run.font
-                                font_red.color.rgb = RGBColor(255, 0, 0)
+                    paragraph_lines = p.text.split("\n")
+                    runs_ind = 0
+                    line_ind = 0
+                    for i in range(len(paragraph_lines)):
+                        cur_fdev = fractional_deviations[i]
+
+                        # Set the current font color based on the current fractional deviation
+                        if cur_fdev > 0.0001 and cur_fdev < 0.0002:
+                            cur_color = RGBColor(219, 165, 7)       # Yellow
+                        elif cur_fdev > 0.0002:
+                            cur_color = RGBColor(255, 0, 0)         # Red
+                        else:
+                            cur_color = RGBColor(0, 0, 0)           # Black
+                        
+                        # Iterate over each run in the current line of the paragraph and change the font color of each to the current color.
+                        # For paragraphs where there is no new line (i.e., cells with only one entry), exit when we hit the last index of p.runs.
+                        while line_ind <= i and runs_ind < len(p.runs):
+                            cur_run = p.runs[runs_ind]
+
+                            # Increment line index counter every time we hit a new line (keeps track of how runs correspond to characters in each 
+                            # line; some runs might be more or less than 1 character long)
+                            if cur_run.text == '\n':
+                                line_ind += 1
+
+                            # Only change fonts if we have arrived at the current line
+                            if line_ind == i:
+                                cur_run.font.color.rgb = cur_color
+
+                            runs_ind += 1
 
 
 # TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)

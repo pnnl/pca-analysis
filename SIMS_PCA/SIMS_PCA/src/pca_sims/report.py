@@ -236,6 +236,7 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                 else:
                     cur_entry = cur_group[k]
                 
+                # TODO Adds an extra line at beginning of each cell; might want to remove this to shorten table?
                 p = t.cell(i+1,j).add_paragraph()
                 if str(cur_entry) == 'nan':                                                             # Do nothing for entries that are not a number
                     p.add_run('')
@@ -265,8 +266,8 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                     paragraph_lines = p.text.split("\n")
                     runs_ind = 0
                     line_ind = 0
-                    for i in range(len(paragraph_lines)):
-                        cur_fdev = fractional_deviations[i]
+                    for l in range(len(paragraph_lines)):
+                        cur_fdev = fractional_deviations[l]
 
                         # Set the current font color based on the current fractional deviation
                         if cur_fdev > 0.0001 and cur_fdev < 0.0002:
@@ -278,7 +279,7 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                         
                         # Iterate over each run in the current line of the paragraph and change the font color of each to the current color.
                         # For paragraphs where there is no new line (i.e., cells with only one entry), exit when we hit the last index of p.runs.
-                        while line_ind <= i and runs_ind < len(p.runs):
+                        while line_ind <= l and runs_ind < len(p.runs):
                             cur_run = p.runs[runs_ind]
 
                             # Increment line index counter every time we hit a new line (keeps track of how runs correspond to characters in each 
@@ -287,7 +288,7 @@ def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.Da
                                 line_ind += 1
 
                             # Only change fonts if we have arrived at the current line
-                            if line_ind == i:
+                            if line_ind == l:
                                 cur_run.font.color.rgb = cur_color
 
                             runs_ind += 1

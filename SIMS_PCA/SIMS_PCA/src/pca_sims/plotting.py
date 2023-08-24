@@ -83,7 +83,7 @@ def plot_pca_result(
     # FETCH GROUP LABELS
     print('-------->Score Plot and Confidence Ellipse Drawing...')
 
-    # TODO What about characters at the start (like the S here: S479-P2) that make x not an integer?
+    # TODO What if the user has added character(s) at the start (like the S here: S479-P2) that make x not an integer?
     '''
     This helper function takes the group names, which we expect to be of the following form:
              <A group of digits> - <P OR N> <A number from 1-6>

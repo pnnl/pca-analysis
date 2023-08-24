@@ -118,11 +118,10 @@ def plot_pca_result(
     # READ SUBSET OF GROUP NUMBERS ON WHICH WE WANT TO PERFORM PCA
     all_group_nums = pca_df['group'].unique()
     legend_labels = []
-    N = 0
     try:
         sub_group_nums = pd.read_csv(f_group_numbers)
         sub_group_nums = sub_group_nums['Group'].unique().tolist()
-        N = len(sub_group_nums)
+        print("\n\tSample group numbers to be plotted: ", sub_group_nums, "\n")
 
         # Get the indices of the entries in df for which the user asks us to pull data (as specified in group numbers .txt file)
         sub_group_indices = []

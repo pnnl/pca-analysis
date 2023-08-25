@@ -95,7 +95,8 @@ class pca_sims(object):
 
         # TODO Currently, measured masses from previous document disappear upon switching from positive to negative document or vice versa. Is this fine?
         # Save the measured masses for ID later
-        self.measured_masses = pd.read_csv('SIMS_PCA/SIMS_PCA/sims-data/measured_masses.csv')
+        f_measured_masses = os.path.join(self.pcaDir, 'sims-data/measured_masses.csv')
+        self.measured_masses = pd.read_csv(f_measured_masses)
 
         # Get the unit mass assignments from the chosen .csv document
         self.doc_mass = pd.read_csv(f_doc_mass, index_col=0)

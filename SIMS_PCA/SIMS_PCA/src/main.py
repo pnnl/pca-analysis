@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+import traceback
 # Disable matplotlib font logging (it outputs unnecessary info about missing fonts)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
@@ -25,10 +26,10 @@ positive_or_negative_ion = 'positive'
 f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
 
 # Store the subset of groups from the data above which the user wants to analyze
-f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/Group Numbers.txt')
+f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/_groupnumbers.txt')
 
 # SIMS metadata
-f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/metadata.txt')
+f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/_metadata.txt')
 
 # SIMS-PCA report
 f_report = os.path.join(pcaDir, 'output_sample/report.docx')
@@ -56,8 +57,8 @@ pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, posit
 # document-based classifications with calibrated data (usually done on later passes).
 # If the user does not enter a valid form of yes or no, then we allow for new attempts until a valid string is given.
 while True:
-    do_update = input('-------->Would you like to update document values database (y/n)? If not, I will ' +
-                'assume you want to do PCA. \n').strip()
+    do_update = input('-------->If you would like to update the document values database from the report, type \'y\' and press Enter; ' +
+                       'if you would like to generate the PCA report instead, enter \'n\' below.\n').strip()
     
     if (do_update != 'y') and (do_update != 'Y') and (do_update != 'n') and (do_update != 'N'):
         print('\n***Invalid option selected; enter either \'y\' for yes or \'n\' for no.\n')

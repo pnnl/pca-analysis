@@ -122,8 +122,7 @@ class pca_sims_report(object):
     # No. # | Unit Mass | Document Mass | Initial Peak Assignment | Initial Probabilities | Measured Mass | Updated Peak Assignment (from Measured Mass)
     #  | Updated Peak Assignment (from Document Mass) | Updated Document Mass
     def write_table_page(self, pcacomp:int, positive_ion:bool, 
-                         p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame,
-                         measured_masses:pd.DataFrame):
+                         p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame):
         document = self.document
         sign_ion = 'Positive' if positive_ion else 'Negative'
 
@@ -134,7 +133,7 @@ class pca_sims_report(object):
         document.add_heading('{} ion spectra, top positive loadings -- PC{}'.format(sign_ion, pcacomp), 1)
 
         # Write positive loading values ...
-        document_add_table(document, p_loading_table, measured_masses)
+        document_add_table(document, p_loading_table)
         
         # Start a new page
         document.add_page_break()
@@ -143,7 +142,7 @@ class pca_sims_report(object):
         document.add_heading('{} ion spectra, top negative loadings -- PC{}'.format(sign_ion, pcacomp), 1)
 
         # Write negative loading values ...
-        document_add_table(document, n_loading_table, measured_masses)
+        document_add_table(document, n_loading_table)
 
 
     def write_analysis_page(self, pcacomp:int, positive_ion:bool, 
@@ -206,7 +205,7 @@ class pca_sims_report(object):
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------
 
 # Add a table to the end and create a reference variable along with an extra header row
-def document_add_table(document:Document, df:pd.DataFrame, measured_masses:pd.DataFrame):
+def document_add_table(document:Document, df:pd.DataFrame):
     # Create number of rows + columns corresponding to the dataframe's size
     t = document.add_table(df.shape[0]+1, df.shape[1])
     t.style = 'Table Grid'

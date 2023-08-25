@@ -41,9 +41,8 @@ def plot_pca_result(
     sample_description_set: List,
     pcaDir: str,
     outDir: str,
-    f_group_numbers: str='sims-data/OriginalData/Group Numbers.txt',
-    max_pcacomp: int=5
-):
+    f_group_numbers: str='sims-data/OriginalData/_groupnumbers.txt',
+    max_pcacomp: int=5):
     """
     The main plotting functions.
     """
@@ -132,7 +131,7 @@ def plot_pca_result(
         legend_labels = [sample_description_set[i][1] for i in sub_group_indices]
     except:
         print(traceback.print_exc())
-        print('***Error! Group names missing or formatted incorrectly!***')
+        print('***Error! Group Numbers File Missing or Contains Incorrectly Formatted Values!***')
         sys.exit()
 
 
@@ -250,7 +249,7 @@ def plot_pca_result(
                     
     except:
         print(traceback.print_exc())
-        print('***Error! Cannot Draw Correct Score Plot and Confidence Ellipse')
+        print('***Error! Cannot Draw Correct Score Plot and Confidence Ellipse!')
         # import trace
         # print(traceback.print_exc())
         sys.exit()
@@ -313,7 +312,7 @@ def plot_pca_result(
 
     except:
         print(traceback.print_exc())
-        print('Error! Cannot Draw Correct Loading Plot')
+        print('Error! Cannot Draw Correct Loading Plot!')
         sys.exit()
         
     # EXPORTS LOADING DATA

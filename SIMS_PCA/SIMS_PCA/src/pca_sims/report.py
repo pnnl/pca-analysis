@@ -2,6 +2,8 @@
 
 import re
 from typing import Dict, Any, Optional
+import sys
+import traceback
 
 from pty import STDERR_FILENO
 from docx import Document
@@ -301,12 +303,20 @@ def document_add_table(document:Document, df:pd.DataFrame):
 #   in_table - True means we use new line separators to add text to a table, False means we use comma separators to add text elsewhere
 def document_add_assignment(p, assignment:list, in_table:bool=False) -> None:
     n_assign = len(assignment)
-    # For each chemical species assignment (expect assign to be a string)
+    # For each chemical species assignment (expect assign to be a string), pull off sign(s) on the end, then split the remaining string on any digits in the
+    # chemical formula (e.g., 'C3H6' -> ['C', '3', 'H', '6']); afterward, recombine this string and its charge with proper subscripting and superscripting 
+    # for chemical formulas
     for j,assign in enumerate(assignment):
-        # Pull off sign out front, then split the remaining string on any digits in the chemical formula (e.g., 'C3H6' -> ['C', '3', 'H', '6'])
-        assign_, signs = re.split('([+-]+)', assign)[0:2]
-        assign_ = re.split('(\d+)', assign_)
-        assign_ = [s for s in assign_ if s != '']
+        # Tell the user if a charge, which should be indicated by some number of + or - signs at the end of each assign, is missing on one of the entries
+        try:
+            assign_, signs = re.split('([+-]+)', assign)[0:2]
+            assign_ = re.split('(\d+)', assign_)
+            assign_ = [s for s in assign_ if s != '']
+        except:
+            print('***Error! Ion missing charge! Please ensure each species you entered has at least one + or - sign at the end.***\n')
+            print("Species causing error: ", assign)
+            sys.exit()
+
         # Add number and letter
         for i,s in enumerate(assign_):
             if i==0 and is_float(s):

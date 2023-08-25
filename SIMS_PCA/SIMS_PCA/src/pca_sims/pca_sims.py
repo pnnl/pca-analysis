@@ -14,8 +14,8 @@ from .plotting import plot_pca_result
 from .report import pca_sims_report
 
 
-positive_ion_category = ["Hydrocarbon", "Oxygen-containing organics", "Nitrogen-containing organics", "Benzene-containing organics", "PDMS"]
-negative_ion_category = ["Hydrocarbon", "Nitrogen-containing organics", "SiOx", "SOx", "POx", "NOx", "Benzene-containing organics", "Organic acids", "Fatty acids"]
+positive_ion_category = ["Hydrocarbons", "Oxygen-containing organics", "Nitrogen-containing organics", "Benzene-containing organics", "PDMS"]
+negative_ion_category = ["Hydrocarbons", "Nitrogen-containing organics", "SiOx", "SOx", "POx", "NOx", "Benzene-containing organics", "Organic acids", "Fatty acids"]
 
 
 class pca_sims(object):
@@ -94,6 +94,7 @@ class pca_sims(object):
         self.mass_id.sort_values(by=['raw_mass'], inplace=True)
 
         # TODO Currently, measured masses from previous document disappear upon switching from positive to negative document or vice versa. Is this fine?
+        # TODO Also, measured masses aren't removed from database if they are deleted from their cells in the document. Is this fine?
         # Save the measured masses for ID later
         self.f_measured_masses = os.path.join(self.pcaDir, 'sims-data/measured_masses.csv')
         self.measured_masses = pd.read_csv(self.f_measured_masses)
@@ -276,13 +277,13 @@ class pca_sims(object):
 
         # TODO >>> Apply _groupnumbers.txt filtering to the loading tables (not just the PCA plots)
         positive_loading_table=pd.DataFrame(
-            data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (Qualified)":[" "]*fetchn_more, 
-                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
+            data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[""]*fetchn_more, "Initial Peak Assignment":[""]*fetchn_more, 
+                  "Initial Probabilities":[""]*fetchn_more, "Measured Mass":[""]*fetchn_more, "Peak Assignment (Qualified)":[""]*fetchn_more, 
+                  "Updated Peak Assignment (from Document Mass)":[""]*fetchn_more, "Updated Document Mass":[""]*fetchn_more})
         negative_loading_table=pd.DataFrame(
-            data={"- Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":negative_topx, "Document Mass":[" "]*fetchn_more, "Initial Peak Assignment":[" "]*fetchn_more, 
-                  "Initial Probabilities":[" "]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (Qualified)":[" "]*fetchn_more, 
-                  "Updated Peak Assignment (from Document Mass)":[" "]*fetchn_more, "Updated Document Mass":[" "]*fetchn_more})
+            data={"- Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":negative_topx, "Document Mass":[""]*fetchn_more, "Initial Peak Assignment":[""]*fetchn_more, 
+                  "Initial Probabilities":[""]*fetchn_more, "Measured Mass":[" "]*fetchn_more, "Peak Assignment (Qualified)":[""]*fetchn_more, 
+                  "Updated Peak Assignment (from Document Mass)":[""]*fetchn_more, "Updated Document Mass":[""]*fetchn_more})
         
         # Extract the species classifications (as strings) from each of the top n options, but only if the lists are nonempty to prevent errors
         # top_n_species_doc_masses = np.array([float(sub_list[0][0]) if sub_list[0] else np.nan for sub_list in self.top_n_species_doc])
@@ -371,7 +372,7 @@ class pca_sims(object):
     def _get_dominant_positive_ions(self, p_loading_table, n_loading_table, all_loading_table):
         """Write the dominant positive ions to the report"""
         signals = {}
-        # "Hydrocarbon", 
+        # "Hydrocarbons", 
         ion_list = [15, 27, 29, 41, 43, 55, 57] 
         if len(intersect(ion_list, p_loading_table['Unit Mass'])) >= 2:
             active, type = True, '+pca'
@@ -385,7 +386,7 @@ class pca_sims(object):
             top_ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Hydrocarbon"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
+        signals["Hydrocarbons"] = {"active":active, "type":type, "top_ion_list":top_ion_list, "ion_list": selected_ion_list}
         
         # "Oxygen-containing organics", 
         ion_list = [31, 19] 
@@ -453,7 +454,7 @@ class pca_sims(object):
     def _get_dominant_negative_ions(self, p_loading_table, n_loading_table, all_loading_table):
         """Write the dominant negative ions to the report"""
         signals = {}
-        # "Hydrocarbon", 
+        # "Hydrocarbons", 
         ion_list = [12, 13, 24, 25] 
         if len(intersect(ion_list, p_loading_table['Unit Mass'])) >= 2:
             active, type = True, '+pca'
@@ -467,7 +468,7 @@ class pca_sims(object):
             top_ion_list = intersect(ion_list, n_loading_table['Unit Mass'])
         else:
             active, type, selected_ion_list, top_ion_list = False, None, [], []
-        signals["Hydrocarbon"] = {"active":active, "type":type, 
+        signals["Hydrocarbons"] = {"active":active, "type":type, 
                                   "top_ion_list": top_ion_list,
                                   "ion_list": selected_ion_list}
 
@@ -724,6 +725,12 @@ class pca_sims(object):
         if cur_updated_peak_assignment and cur_updated_peak_assignment and ( len(cur_updated_peak_assignment.split(",")) != len(cur_updated_doc_mass.split(",")) ):
             print('***Error! Make sure the data you entered in \"Updated Peak Assignment (from Document Mass)\" and \"Updated Document Mass\" have the same number of entries.***')
             sys.exit()
+
+        for species in cur_updated_peak_assignment.split(","):
+            if species[-1].strip() != "+" and species[-1].strip() != "-":
+                print('***Error! Ion missing charge! Please ensure each species you entered has at least one + or - sign at the end.***\n')
+                print("Species causing error: ", species)
+                sys.exit()
 
 
 # ------------------------------------------------------------------------------ Some useful helper methods ------------------------------------------------------------------------------

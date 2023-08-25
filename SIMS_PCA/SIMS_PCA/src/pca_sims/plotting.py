@@ -82,18 +82,8 @@ def plot_pca_result(
     # FETCH GROUP LABELS
     print('-------->Score Plot and Confidence Ellipse Drawing...')
 
-    # TODO What if the user has added character(s) at the start (like the S here: S479-P2) that make x not an integer?
-    '''
-    This helper function takes the group names, which we expect to be of the following form:
-             <A group of digits> - <P OR N> <A number from 1-6>
-    for instance, 072-P6 is a typical group name. Here, we extract the digits for later use by splitting on the -.
-    '''
-    def ExtractString(x):
-        x = str(x)
-        x = re.sub("-", "_", x)
-        x = x.split("_")[0]
-        return int(x)
-
+    
+    # READ SUBSET OF GROUP NUMBERS ON WHICH WE WANT TO PERFORM PCA
     try:
         pca_df['group']=pca_df.index
         pca_df['group']=pca_df['group'].apply(ExtractString)
@@ -113,26 +103,10 @@ def plot_pca_result(
         order = vals.argsort()[::-1]
         return vals[order], vecs[:,order]
 
-
-    # READ SUBSET OF GROUP NUMBERS ON WHICH WE WANT TO PERFORM PCA
-    all_group_nums = pca_df['group'].unique()
-    legend_labels = []
-    try:
-        sub_group_nums = pd.read_csv(f_group_numbers)
-        sub_group_nums = sub_group_nums['Group'].unique().tolist()
-        print("\n\tSample group numbers to be plotted: ", sub_group_nums, "\n")
-
-        # Get the indices of the entries in df for which the user asks us to pull data (as specified in group numbers .txt file)
-        sub_group_indices = []
-        for i in range(len(sub_group_nums)):
-            sub_group_indices.append(np.argwhere(all_group_nums == sub_group_nums[i])[0][0])
-
-        # Pull legend labels from the sample descriptions (but only the subset specified the user selected)
-        legend_labels = [sample_description_set[i][1] for i in sub_group_indices]
-    except:
-        print(traceback.print_exc())
-        print('***Error! Group Numbers File Missing or Contains Incorrectly Formatted Values!***')
-        sys.exit()
+    # Pull legend labels from the sample descriptions (but only the subset specified the user selected)
+    group_nums = pca_df['group'].unique()
+    S=len(sample_description_set)
+    legend_labels = [sample_description_set[i][1] for i in range(S) if sample_description_set[i][0] in group_nums]
 
 
     try:
@@ -158,7 +132,7 @@ def plot_pca_result(
 
                     # i goes from 0,1,...n-1 and label goes from n,n+1,...m. This acounts for the cases where the metadata 
                     # doesn't start at 1.
-                    for i,label in enumerate(sub_group_nums):
+                    for i,label in enumerate(group_nums):
                         x=pca_df[pca_df['group']==label]['PC'+str(j)].values
                         y=pca_df[pca_df['group']==label]['PC'+str(k)].values
                         figroup.append(plt.scatter(x, y,color=colorn[i],marker=markern[i]))
@@ -184,7 +158,7 @@ def plot_pca_result(
                     plt.figure(figsize=(10,7))
                     ax = plt.subplot(111)
                     fign+=1
-                    for i,label in enumerate(sub_group_nums):
+                    for i,label in enumerate(group_nums):
                         x=pca_df[pca_df['group']==label]['PC'+str(j)].values
                         y=pca_df[pca_df['group']==label]['PC'+str(k)].values
                         cov = np.cov(x, y)
@@ -220,11 +194,11 @@ def plot_pca_result(
         for pc in range(1,max_pcacomp+1):
             plt.figure(figsize=(14,7))
             ax = plt.subplot(111)
-            group_nums = len(sub_group_nums)
-            plt.xlim(left=0, right=10*(group_nums+1))
+            N = len(group_nums)
+            plt.xlim(left=0, right=10*(N+1))
             plt.xticks([])
 
-            for i,label in enumerate(sub_group_nums):
+            for i,label in enumerate(group_nums):
                 heights = pca_df[pca_df['group']==label]['PC'+str(pc)].values
                 pt_nums = len(heights)
                 
@@ -324,4 +298,17 @@ def plot_pca_result(
         print('***Error! Cannot Export Loading Data Correctly!***')
         sys.exit()
     
-    return pca_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set 
+    return pca_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set
+
+
+# TODO What if the user has added character(s) at the start (like the S here: S479-P2) that make x not an integer?
+'''
+This helper function takes the group names, which we expect to be of the following form:
+            <A group of digits> - <P OR N> <A number from 1-6>
+for instance, 072-P6 is a typical group name. Here, we extract the digits for later use by splitting on the -.
+'''
+def ExtractString(x):
+    x = str(x)
+    x = re.sub("-", "_", x)
+    x = x.split("_")[0]
+    return int(x)

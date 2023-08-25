@@ -33,18 +33,40 @@ class pca_sims(object):
         print('\n-------->Reading Data...')
         # Read SIMS data
         try:
-            rawdata=pd.read_csv(f_rawsims_data,sep='\t')
+            rawdata=pd.read_csv(f_rawsims_data, sep='\t')
             rawdata.dropna(inplace=True)
             mass_raw = rawdata['Mass (u)'].values
             rawdata['Mass (u)']=rawdata['Mass (u)'].apply(np.round).astype(int)
-            rawdata.set_index(rawdata['Mass (u)'],inplace=True)
+            rawdata.set_index(rawdata['Mass (u)'], inplace=True)
             mass=rawdata.index
-            rawdata.drop(columns=['Mass (u)'],inplace=True)
+            rawdata.drop(columns=['Mass (u)'], inplace=True)
             # print("rawdata: ", rawdata)
             # print("mass: ", mass)
         except:
             print(traceback.print_exc())
             print('***Error! Cannot Find Correct Raw Data File!***')
+            sys.exit()
+
+        # TODO We don't throw an error on numbers entered into f_group_numbers .txt file that don't match up with the samples. 
+        #      We print all of them out, but incorrect numbers won't affect the filtering anyway. Is this assumption fine?
+        # Read subset of group numbers on which we want to perform PCA from user-specified .csv file, then filter the raw data so that 
+        # it only contains those columns
+        try:
+            group_nums = pd.read_csv(f_group_numbers)
+            group_nums = group_nums['Group'].unique().tolist()
+            group_nums.sort()
+            print('\n\tSample group numbers: ', group_nums, '\n')
+
+            columns_to_drop = []
+            for label in rawdata.columns:
+                label_has_no_sub_group_num = all([not str(num) in label for num in group_nums])
+                if label_has_no_sub_group_num:
+                    columns_to_drop.append(label)
+
+            rawdata.drop(columns=columns_to_drop, inplace=True)
+        except:
+            print(traceback.print_exc())
+            print('***Error! Group Numbers File Missing or Contains Incorrectly Formatted Values!***')
             sys.exit()
         
         # Read data description
@@ -198,6 +220,7 @@ class pca_sims(object):
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         #     print("measured_masses: ", self.measured_masses)
 
+        # TODO Uncertainty calculated on subgroups of all sample groups even if only a few are selected. Could this have a significant effect?
         # TODO Make second two outputs fields of the classifier instance instead of having them show up as separate variables here
         # Assign IDs and probabilities to the PCA data using the components found above
         self.classifier_doc, self.rel_prob_matrix_doc, self.top_n_species_doc = self.classify_species(self.mass_id['raw_mass'], 
@@ -275,7 +298,6 @@ class pca_sims(object):
         positive_topx = loadingTable.iloc[-fetchn_more:][pcacomp].index.tolist()[::-1]
         positive_topy = loadingTable.iloc[-fetchn_more:][pcacomp].tolist()[::-1]
 
-        # TODO >>> Apply _groupnumbers.txt filtering to the loading tables (not just the PCA plots)
         positive_loading_table=pd.DataFrame(
             data={"+ Loading No.":[x for x in range(1,fetchn_more+1)], "Unit Mass":positive_topx, "Document Mass":[""]*fetchn_more, "Initial Peak Assignment":[""]*fetchn_more, 
                   "Initial Probabilities":[""]*fetchn_more, "Measured Mass":[""]*fetchn_more, "Peak Assignment (Qualified)":[""]*fetchn_more, 
@@ -338,9 +360,9 @@ class pca_sims(object):
         # ----------------- Detailed description --------------------
         # Get dominant ion categories
         if self.positive_ion:
-            signals = self._get_dominant_positive_ions(positive_loading_table, negative_loading_table, loadingTable_pcacomp)    # TODO >>> Apply _groupnumbers.txt filtering
+            signals = self._get_dominant_positive_ions(positive_loading_table, negative_loading_table, loadingTable_pcacomp)
         else:
-            signals = self._get_dominant_negative_ions(positive_loading_table, negative_loading_table, loadingTable_pcacomp)    # TODO >>> Apply _groupnumbers.txt filtering
+            signals = self._get_dominant_negative_ions(positive_loading_table, negative_loading_table, loadingTable_pcacomp)
         # print("pca component: {}".format(pcacomp))
         # print("positive_ion: {}".format(positive_ion))
         # print(positive_loading_table.index)
@@ -349,28 +371,28 @@ class pca_sims(object):
 
         # ----------------- Write the report -----------------------
         # Plot page
-        # TODO >>> Apply _groupnumbers.txt filtering
         self.report.write_plot_page(pcacomp, self.positive_ion, self.fig_scores_single_set[pcacomp-1], self.fig_loading_set[pcacomp-1],
                                     positive_loading_table, negative_loading_table, signals)
 
         # Table page
-        # TODO >>> Apply _groupnumbers.txt filtering
         self.report.write_table_page(pcacomp, self.positive_ion, positive_loading_table, negative_loading_table)
 
         # Analysis page
-        # TODO >>> Apply _groupnumbers.txt filtering
         self.report.write_analysis_page(pcacomp, self.positive_ion, 
                                         positive_loading_table, negative_loading_table, signals)
 
 
+    # Create a loadings table from the PCA scores
     def _get_loading_scores(self):
         self.loading_scores = self.pca.components_
         self.loadingTable   = pd.DataFrame(self.loading_scores.T,index=self.mass,
                                            columns=list(range(1, self.ncomp+1)))
 
 
+    # Save some well-known groups of ions (e.g., hydrocarbons, _-containing organics) so we can succinctly summarize the constituents of
+    # the top loadings for the user later
     def _get_dominant_positive_ions(self, p_loading_table, n_loading_table, all_loading_table):
-        """Write the dominant positive ions to the report"""
+        """Write the dominant positive ions to the report."""
         signals = {}
         # "Hydrocarbons", 
         ion_list = [15, 27, 29, 41, 43, 55, 57] 

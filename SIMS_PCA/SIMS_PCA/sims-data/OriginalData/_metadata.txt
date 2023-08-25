@@ -1,11 +1,11 @@
 Experiment,Hifh P
 Date,20230810
 Operator,Chris Pasture
-01,Sample-479
-02,Sample-480
-03,Sample-482
-04,Sample-483
-05,Sample-484
-06,Sample-489
-07,Sample-490
-08,Sample-491
+479,Sample-479
+480,Sample-480
+482,Sample-482
+483,Sample-483
+484,Sample-484
+489,Sample-489
+490,Sample-490
+491,Sample-491

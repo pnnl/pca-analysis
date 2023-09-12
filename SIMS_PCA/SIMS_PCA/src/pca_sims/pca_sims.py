@@ -716,11 +716,14 @@ class pca_sims(object):
                         measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(float(cur_measured_mass) - float(updated_doc_mass)), 6))
         
         # TODO Is this too overcomplicated for simply filtering out old measured mass entries?
+        # TODO When taking split(',')[0], what if there's an entry with multiple possible assignments and the first one isn't close enough to trigger the tolerance?
+        #      Increased tolerance to account for this, but be aware of possibly throwing out a valid entry in future.
+        # TODO Now Measured Mass entries that have been deleted in report aren't removed in measured_masses.csv...Fix this next.
         # Make sure to filter out any old entries in measured_mass by only keeping those with a document_mass found in the doc_mass DataFrame
         valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
         measured_mass = measured_mass[
             measured_mass['document_mass'].apply( 
-                lambda x: any(np.isclose(float(x), valid_value, atol=1e-6) for valid_value in valid_masses) 
+                lambda x: any(np.isclose(float(x), valid_value, atol=1e-1) for valid_value in valid_masses)
                 )
             ]
 

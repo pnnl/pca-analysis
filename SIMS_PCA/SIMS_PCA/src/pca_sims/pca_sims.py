@@ -116,7 +116,6 @@ class pca_sims(object):
         self.mass_id.sort_values(by=['raw_mass'], inplace=True)
 
         # TODO Currently, measured masses from previous document disappear upon switching from positive to negative document or vice versa. Is this fine?
-        # TODO Also, measured masses aren't removed from database if they are deleted from their cells in the document. Is this fine?
         # Save the measured masses for ID later
         self.f_measured_masses = os.path.join(self.pcaDir, 'sims-data/measured_masses.csv')
         self.measured_masses = pd.read_csv(self.f_measured_masses)
@@ -715,10 +714,10 @@ class pca_sims(object):
                         measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass
                         measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(float(cur_measured_mass) - float(updated_doc_mass)), 6))
         
-        # TODO Is this too overcomplicated for simply filtering out old measured mass entries?
         # TODO When taking split(',')[0], what if there's an entry with multiple possible assignments and the first one isn't close enough to trigger the tolerance?
         #      Increased tolerance to account for this, but be aware of possibly throwing out a valid entry in future.
-        # TODO Now Measured Mass entries that have been deleted in report aren't removed in measured_masses.csv...Fix this next.
+        # TODO 1) Measured Mass entries that have been deleted in report aren't removed in measured_masses.csv, and 
+        #      2) only changing the first instance of a Measured Mass entry will update the .csv file. Are these acceptable?
         # Make sure to filter out any old entries in measured_mass by only keeping those with a document_mass found in the doc_mass DataFrame
         valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
         measured_mass = measured_mass[

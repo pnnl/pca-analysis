@@ -681,14 +681,7 @@ class pca_sims(object):
                 cur_updated_doc_mass = format_user_input(row.cells[8].text)
 
                 # Ignore the header row
-                if not ('No.' in cur_header_start):
-                    # Update the measured masses if there is one in this row and we don't already have it in the measured_mass DataFrame
-                    if cur_measured_mass and (not cur_doc_mass in list(measured_mass['document_mass'].values)):
-                        mm_size = len(measured_mass.index)
-                        measured_mass.loc[mm_size, 'document_mass'] = cur_doc_mass
-                        measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass
-                        measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(float(cur_measured_mass) - float(cur_doc_mass)), 6))
-
+                if not ('No.' in cur_header_start):                    
                     # Ignore rows without any updates
                     if cur_updated_doc_mass or cur_updated_peak_assignment:
                         # Check user updates for errors
@@ -712,6 +705,24 @@ class pca_sims(object):
                         else:
                             print('***Error! Invalid data update. Check each of your table entries to ensure that you entered BOTH an updated peak assignment and updated document mass.***')
                             sys.exit()
+                    
+                    # Update the measured masses if there is one in this row and we don't already have it in the measured_mass DataFrame. Do this after any updates to the peak
+                    # assignments to make sure we get the most up-to-date assignment for the document_mass column in measured_mass.
+                    updated_doc_mass = cur_updated_doc_mass.split(",")[0] if cur_updated_doc_mass else cur_doc_mass
+                    if cur_measured_mass and (not updated_doc_mass in list(measured_mass['document_mass'].values)):
+                        mm_size = len(measured_mass.index)
+                        measured_mass.loc[mm_size, 'document_mass'] = updated_doc_mass
+                        measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass
+                        measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(float(cur_measured_mass) - float(updated_doc_mass)), 6))
+        
+        # TODO Is this too overcomplicated for simply filtering out old measured mass entries?
+        # Make sure to filter out any old entries in measured_mass by only keeping those with a document_mass found in the doc_mass DataFrame
+        valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
+        measured_mass = measured_mass[
+            measured_mass['document_mass'].apply( 
+                lambda x: any(np.isclose(float(x), valid_value, atol=1e-6) for valid_value in valid_masses) 
+                )
+            ]
 
         # Ensure unit masses are integers and that our Dataframe is sorted before writing it to the given file
         doc_mass['Unit Mass'] = doc_mass['Unit Mass'].astype(int)

@@ -219,23 +219,13 @@ class pca_sims(object):
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         #     print("measured_masses: ", self.measured_masses)
 
-        # TODO Uncertainty calculated on subgroups of all sample groups even if only a few are selected. Could this have a significant effect?
+        # TODO Uncertainty calculated on all sample groups even if only a few subgroups are selected. Could this have a significant effect?
         # TODO Make second two outputs fields of the classifier instance instead of having them show up as separate variables here
         # Assign IDs and probabilities to the PCA data using the components found above
-        self.classifier_doc, self.rel_prob_matrix_doc, self.top_n_species_doc = self.classify_species(self.mass_id['raw_mass'], 
+        self.classifier, self.rel_prob_matrix, self.top_n_species = self.classify_species(self.mass_id['raw_mass'], 
                                                                                                       self.mass_id['document_mass'], 
                                                                                                       doc_mass_list, 
                                                                                                       species_list, n)
-        # TODO May need top_n_species_measured in addition to top_n_species_doc in the future; uncomment when needed again
-        # TODO Deal with problem where fewer than 2 entries in measured_masses causes div by 0 error
-        # Do the same for the measured masses; we keep track of them so the user can see the peak assignments and probabilities corresponding to these values on 
-        # the next run of PCA analysis
-        '''
-        self.classifier_measured, self.rel_prob_matrix_measured, self.top_n_species_measured = self.classify_species(self.measured_masses['measured_mass'],
-                                                                                                                    self.measured_masses['document_mass'], 
-                                                                                                                    doc_mass_list, 
-                                                                                                                    species_list, n)
-        '''
 
 
     def plot_pca_result(
@@ -315,9 +305,9 @@ class pca_sims(object):
             # for 0-indexing)
             unit_mass = positive_loading_table.loc[ind, "Unit Mass"]
 
-            positive_loading_table.at[ind, "Document Mass"] = self.top_n_species_doc[unit_mass-1][0]
-            positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
-            positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
+            positive_loading_table.at[ind, "Document Mass"] = self.top_n_species[unit_mass-1][0]
+            positive_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species[unit_mass-1][1]
+            positive_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
 
             # There are likely many blank cells in the Measured Mass column. We match the document mass from the current row to the document masses in the 
             # measured_masses DataFrame to see if any measured masses in our database correspond to the current entry, and if not, we leave these cells blank.
@@ -336,9 +326,9 @@ class pca_sims(object):
         for ind in negative_loading_table.index:
             unit_mass = negative_loading_table.loc[ind, "Unit Mass"]
 
-            negative_loading_table.at[ind, "Document Mass"] = self.top_n_species_doc[unit_mass-1][0]
-            negative_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species_doc[unit_mass-1][1]
-            negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species_doc[unit_mass-1][2]
+            negative_loading_table.at[ind, "Document Mass"] = self.top_n_species[unit_mass-1][0]
+            negative_loading_table.at[ind, "Initial Peak Assignment"] = self.top_n_species[unit_mass-1][1]
+            negative_loading_table.at[ind, "Initial Probabilities"] = self.top_n_species[unit_mass-1][2]
 
             # There are likely many blank cells in the Measured Mass column. We match the document mass from the current row to the document masses in the 
             # measured_masses DataFrame to see if any measured masses in our database correspond to the current entry, and if not, we leave these cells blank.

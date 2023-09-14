@@ -92,7 +92,8 @@ def plot_pca_result(
         pca_df.to_csv(os.path.join(pcaDir, outDir, 'PC1-{}_SCORE_TABLE.txt'.format(max_pcacomp)))
     except:
         print(traceback.print_exc())
-        print('***Error! Missing Group Information!***')
+        print('***Error! Group names missing or formatted incorrectly. Make sure all group names contain a group of three digits, followed by a hyphen or underscore, ' +
+              'followed by a capital P or N, followed by a single digit from 1 to 6 (e.g., 123-P6 would be acceptable).***')
         sys.exit()
 
 
@@ -301,7 +302,6 @@ def plot_pca_result(
     return pca_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set
 
 
-# TODO What if the user has added character(s) at the start (like the S here: S479-P2) that make x not an integer?
 '''
 This helper function takes the group names, which we expect to be of the following form:
             <A group of digits> - <P OR N> <A number from 1-6>

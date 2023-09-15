@@ -13,7 +13,7 @@ from pca_sims.pca_sims import pca_sims
 # ------------------------------------------------- VALUES THAT USERS MAY NEED TO CHANGE -------------------------------------------------
 # The main PCA folder (for example, if storing your data on Windows at PNNL, this could be
 # /mnt/c/Users/<INSERT USERNAME>/'OneDrive - PNNL'/Documents/pca-analysis/SIMS_PCA/SIMS_PCA).
-pcaDir = "/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/"
+pcaDir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 
 # Output folder
 outDir = os.path.join(pcaDir, 'output_sample')

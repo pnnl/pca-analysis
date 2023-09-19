@@ -712,7 +712,7 @@ class pca_sims(object):
         valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
         measured_mass = measured_mass[
             measured_mass['document_mass'].apply( 
-                lambda x: any(np.isclose(float(x), valid_value, atol=1e-1) for valid_value in valid_masses)
+                lambda x: any(np.isclose(float(x), valid_value, atol=1e-6) for valid_value in valid_masses)
                 )
             ]
 
@@ -743,8 +743,8 @@ class pca_sims(object):
             valid_updated_doc_mass = all((is_number(element) == True) for element in cur_updated_doc_mass.split(","))
 
         if not valid_updated_peak_assignment or not valid_updated_doc_mass:
-            print('***Error! Make sure the data you entered in \"Updated Peak Assignment (from Document Mass)\" is a valid species or comma-separated list ' +
-                    'of species and that the data you entered in \"Updated Document Mass\" is a real number or comma-separated list of real numbers.***')
+            print('***Error! Make sure the data you entered in \"Updated Peak Assignment (from Document Mass)\" is a valid species or newline/comma-separated list ' +
+                    'of species and that the data you entered in \"Updated Document Mass\" is a real number or newline/comma-separated list of real numbers.***')
             sys.exit()
 
         if cur_updated_peak_assignment and cur_updated_peak_assignment and ( len(cur_updated_peak_assignment.split(",")) != len(cur_updated_doc_mass.split(",")) ):

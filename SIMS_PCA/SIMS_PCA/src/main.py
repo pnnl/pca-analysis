@@ -18,7 +18,6 @@ pcaDir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 # Output folder
 outDir = os.path.join(pcaDir, 'output_sample')
 
-# TODO Implement GUI using CustomTkinter to get positive_or_negative_ion, f_rawsims_data, f_metadata, and f_report from user
 # Indicates to rest of code whether we are handling positive or negative ions
 positive_or_negative_ion = 'positive'
 

@@ -98,24 +98,26 @@ class pca_sims_report(object):
         document.add_picture(score_plot, width=Inches(5))  # Score plot
         document.add_picture(loading_plot, width=Inches(5))  # Loading plot
 
+        # TODO Why is high score being used for everything?
         # Write the top 20 positive loading assignments
         document.add_paragraph("High score samples contain more:")
-        p = document.add_paragraph("", style="List Bullet")
+        p_pos = document.add_paragraph("", style="List Bullet")
         for index in positive_loading_table.index:
             unit_mass, assign = positive_loading_table.loc[index, "Unit Mass"], positive_loading_table.loc[index, "Initial Peak Assignment"]
-            write_top_loadings_list(p, unit_mass, assign)
+            write_top_loadings_list(p_pos, unit_mass, assign)
         # Remove the extra comma separator and space at the end of the run
-        p.text = p.text[:-2]
+        p_pos.text = p_pos.text[:-2]
         positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
         document.add_paragraph(", ".join(positive_dominant_ions), style="List Bullet") # ion categories
 
         # Write the top 20 negative loading assignments
         document.add_paragraph("Low score samples contain more:")
+        p_neg = document.add_paragraph("", style="List Bullet")
         for index in negative_loading_table.index:
             unit_mass, assign = negative_loading_table.loc[index, "Unit Mass"], negative_loading_table.loc[index, "Initial Peak Assignment"]
-            write_top_loadings_list(p, unit_mass, assign)
+            write_top_loadings_list(p_neg, unit_mass, assign)
         # Remove the extra comma separator and space at the end of the run
-        p.text = p.text[:-2]
+        p_neg.text = p_neg.text[:-2]
         negative_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='-pca')] 
         document.add_paragraph(", ".join(negative_dominant_ions), style="List Bullet") # ion categories
 
@@ -170,7 +172,7 @@ class pca_sims_report(object):
         for index in negative_loading_table.index:
             unit_mass, assign = negative_loading_table.loc[index, "Unit Mass"], negative_loading_table.loc[index, "Initial Peak Assignment"]
             write_top_loadings_list(p, unit_mass, assign)
-        p.add_run("indicating they are more observed in high PC{0} score samples.".format(pcacomp))
+        p.add_run("indicating they are more observed in low PC{0} score samples.".format(pcacomp))
 
         # Write the dominant ion categories
         positive_dominant_ions = [ion_type for ion_type in ion_signals if ion_signals[ion_type]['active'] and (ion_signals[ion_type]['type']=='+pca')] 
@@ -191,7 +193,7 @@ class pca_sims_report(object):
             for unit_mass in dominant_mass:
                 assign = negative_loading_table.loc[unit_mass, "Initial Peak Assignment"]
                 write_top_loadings_list(p, unit_mass, assign)
-            p.add_run("are mostly found in negative loadings, indicating that high PC{} score samples contain more {}.".format(pcacomp, ion_type))
+            p.add_run("are mostly found in negative loadings, indicating that low PC{} score samples contain more {}.".format(pcacomp, ion_type))
     
     def save(self):
         # TODO: Generate table of contents

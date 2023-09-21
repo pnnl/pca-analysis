@@ -1,8 +1,8 @@
 import customtkinter
 import os
 import sys
+import subprocess
 import logging
-import traceback
 # Disable matplotlib font logging (it outputs unnecessary info about missing fonts)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
@@ -21,7 +21,6 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(0, weight=1)
 
 
-        # TODO Figure out best way to add a callback command to get the entry values below (use a button?)
         # Add entries for the paths to essential files
         self.pca_dir_label = customtkinter.CTkLabel(self, text='Enter PCA directory here: ', width=40, height=20)
         self.pca_dir_label.grid(row=0, column=0, padx=10, pady=(50, 5), sticky="w")
@@ -39,7 +38,6 @@ class App(customtkinter.CTk):
         self.report_entry.grid(row=2, column=1, padx=10, pady=5)
 
 
-        # TODO Confirm positive / negative choice callback works
         # Add buttons to select whether the report is for positive or negative ion data
         self.label_pos_or_neg = customtkinter.CTkLabel(self, text='Select whether current data contains positive or negative ions: ', width=150, height=80)
         self.label_pos_or_neg.grid(row=3, column=0, padx=10, pady=50, sticky='w')
@@ -49,19 +47,21 @@ class App(customtkinter.CTk):
         self.pos_or_neg.set('positive')
 
 
-        # TODO Sample group numbers button and editing
         # Add checkboxes for selecting sample group numbers
+        self.button_sample_groups = customtkinter.CTkButton(self, text='Edit group numbers to analyze', width=400, height=40, command=self.sample_group_callback)
+        self.button_sample_groups.grid(row=4, column=1, padx=50, pady=5)
 
 
-        # TODO Metadata button and editing
         # Add button to pull up metadata file in order to edit it
+        self.button_metadata = customtkinter.CTkButton(self, text='Edit metadata file', width=400, height=40, command=self.metadata_callback)
+        self.button_metadata.grid(row=5, column=1, padx=50, pady=5)
 
 
         # Finally, add a button to update the document values from the report and another to generate the report from the current database
         self.button_update = customtkinter.CTkButton(self, text='Update document values database from report', width=980, height=50, command=self.update_callback)
-        self.button_update.grid(row=4, padx=50, pady=(50, 5), sticky="ew", columnspan=2)
+        self.button_update.grid(row=6, padx=50, pady=(50, 5), sticky='ew', columnspan=2)
         self.button_generate = customtkinter.CTkButton(self, text='Generate PCA report from current database', width=980, height=50, command=self.generate_callback)
-        self.button_generate.grid(row=5, padx=50, pady=(5, 50), sticky="ew", columnspan=2)
+        self.button_generate.grid(row=7, padx=50, pady=(5, 50), sticky='ew', columnspan=2)
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -96,6 +96,7 @@ class App(customtkinter.CTk):
 
 
     # ------------------------------------------------------- Create the callback commands that will run the program ------------------------------------------------------------
+    # Callback on positive / negative button that identifies the type of ions in the data file
     def pos_or_neg_button_callback(self, value: str):
         self.positive_or_negative_ion = value
         print('Selected \'' + value + '\' doc mass.')
@@ -107,7 +108,19 @@ class App(customtkinter.CTk):
         else:
             print('***Error! Invalid input for positive_or_negative_ion; choose \'positive\' or \'negative\'***')
             sys.exit()
-        
+
+
+    # TODO Change from directly editing file to scrollable checkbox dropdown contained in UI
+    # Callback on button_sample_groups that opens the sample groups file for the user to edit
+    def sample_group_callback(self):
+        subprocess.call(['notepad.exe', self.f_group_numbers])
+
+
+    # TODO Change from directly editing file to CTkEntries contained in UI
+    # Callback on button_metadata that opens the metadata file for the user to edit
+    def metadata_callback(self):
+        subprocess.call(['notepad.exe', self.f_metadata])
+
 
     # Update the report from user changes
     def update_callback(self):
@@ -123,6 +136,7 @@ class App(customtkinter.CTk):
         self.pcasims.update_classifications(self.f_doc_mass, self.f_report)
 
         print('-------->Done.')
+
 
     # Generate the report
     def generate_callback(self):
@@ -150,6 +164,7 @@ class App(customtkinter.CTk):
         print('\n\n\n-------->Congratulations!')
         print('-------->Please Check Results in the output_sample Folder.')
     # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
     # ------------------------------------------------------------- Set up backend input based on user changes  -----------------------------------------------------------------
     def update_pca_instance(self):

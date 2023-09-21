@@ -3,9 +3,7 @@
 import re
 from typing import Dict, Any, Optional
 import sys
-import traceback
 
-from pty import STDERR_FILENO
 from docx import Document
 from docx.shared import Inches
 from docx.oxml import OxmlElement, ns

@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib import patches
-import warnings
 import re
 
 # Plotting settings

@@ -237,7 +237,7 @@ def plot_pca_result(
         fig_loading_set = []
 
         loading_scores=pca.components_[:max_pcacomp,:]
-        loadingTable=pd.DataFrame(loading_scores.T,index=mass,columns=[1,2,3,4,5])
+        loadingTable=pd.DataFrame(loading_scores.T,index=mass,columns=range(1,max_pcacomp+1))
         fetchn=5
         fetchn_more=20
 

@@ -39,10 +39,10 @@ class App(customtkinter.CTk):
 
 
         # Add buttons to select whether the report is for positive or negative ion data
-        self.label_pos_or_neg = customtkinter.CTkLabel(self, text='Select whether current data contains positive or negative ions: ', width=150, height=80)
-        self.label_pos_or_neg.grid(row=3, column=0, padx=10, pady=50, sticky='w')
-        self.pos_or_neg = customtkinter.CTkSegmentedButton(self, width=100, height=80, command=self.pos_or_neg_button_callback)
-        self.pos_or_neg.grid(row=3, column=1, padx=10, pady=10, sticky='ew')
+        self.label_pos_or_neg = customtkinter.CTkLabel(self, text='Select whether current data contains positive or negative ions: ', width=15, height=80)
+        self.label_pos_or_neg.grid(row=3, column=0, padx=10, pady=10, sticky='w')
+        self.pos_or_neg = customtkinter.CTkSegmentedButton(self, width=400, height=80, command=self.pos_or_neg_button_callback)
+        self.pos_or_neg.grid(row=3, column=1, padx=10, pady=10)
         self.pos_or_neg.configure(values=['positive', 'negative'])
         self.pos_or_neg.set('positive')
 
@@ -57,11 +57,18 @@ class App(customtkinter.CTk):
         self.button_metadata.grid(row=5, column=1, padx=50, pady=5)
 
 
+        # Add entry to change number of PCA components desired for plots and tables in the report
+        self.pcacomp_label = customtkinter.CTkLabel(self, text='Change number of PCA components used in report:', width=40, height=20)
+        self.pcacomp_label.grid(row=6, column=0, padx=10, pady=(50,10), sticky='w')
+        self.pcacomp_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='5'), width=400, height=20)
+        self.pcacomp_entry.grid(row=6, column=1, padx=10, pady=(50,10))
+
+
         # Finally, add a button to update the document values from the report and another to generate the report from the current database
         self.button_update = customtkinter.CTkButton(self, text='Update document values database from report', width=980, height=50, command=self.update_callback)
-        self.button_update.grid(row=6, padx=50, pady=(50, 5), sticky='ew', columnspan=2)
+        self.button_update.grid(row=7, padx=50, pady=(50, 5), sticky='ew', columnspan=2)
         self.button_generate = customtkinter.CTkButton(self, text='Generate PCA report from current database', width=980, height=50, command=self.generate_callback)
-        self.button_generate.grid(row=7, padx=50, pady=(5, 50), sticky='ew', columnspan=2)
+        self.button_generate.grid(row=8, padx=50, pady=(5, 50), sticky='ew', columnspan=2)
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -155,10 +162,10 @@ class App(customtkinter.CTk):
         self.pcasims.identify_components_from_file(n=2)
 
         # Plot PCA result
-        self.pcasims.plot_pca_result()
+        self.pcasims.plot_pca_result(self.max_pcacomp)
 
         # Generate the report
-        self.pcasims.generate_report(f_report=self.f_report, ion_sign=self.positive_or_negative_ion)
+        self.pcasims.generate_report(f_report=self.f_report, ion_sign=self.positive_or_negative_ion, max_pcacomp=self.max_pcacomp)
 
         print('-------->Data Exporting...')
         print('\n\n\n-------->Congratulations!')
@@ -194,11 +201,32 @@ class App(customtkinter.CTk):
         else:
             print('***Error! Empty entry. Please enter text and try again.***')
             raise ValueError
+        
+        # Check whether number of PCA components desired is actually an integer
+        if (self.pcacomp_entry.get()):
+            if (self.isint(self.pcacomp_entry.get())):
+                self.max_pcacomp = int(self.pcacomp_entry.get())
+            else:
+                print(('***Error! Number of PCA components given is not an integer.***'))
+                raise ValueError
+
+            print('-------->Processed number of PCA components successfully.')
+        else:
+            print('***Error! Empty entry. Please enter text and try again.***')
+            raise ValueError
 
         # Initialize the pca_sims instance
         self.pcasims = pca_sims(self.f_rawsims_data, self.f_metadata, self.f_doc_mass, self.pca_dir, self.outDir, self.positive_or_negative_ion, self.f_group_numbers)
     # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    # Useful helper method for telling whether value x can be cast to int
+    def isint(self, x):
+        try:
+            x_test = int(x)
+        except (TypeError, ValueError):
+            return False
+        
+        return True
 
 
 

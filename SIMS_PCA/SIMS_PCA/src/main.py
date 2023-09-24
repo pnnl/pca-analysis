@@ -32,6 +32,9 @@ f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/_metadata.txt')
 
 # SIMS-PCA report
 f_report = os.path.join(pcaDir, 'output_sample/report.docx')
+
+# The number of PCA components for which PCA plots will be created and loading tables will be generated in the report
+max_pcacomp = 5
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -83,10 +86,10 @@ else:
     pcasims.identify_components_from_file(n=2)
 
     # Plot PCA result
-    pcasims.plot_pca_result()
+    pcasims.plot_pca_result(max_pcacomp=max_pcacomp)
 
     # Generate the report
-    pcasims.generate_report(f_report=f_report, ion_sign=positive_or_negative_ion)
+    pcasims.generate_report(f_report=f_report, ion_sign=positive_or_negative_ion, max_pcacomp=max_pcacomp)
 
     print('-------->Data Exporting...')
     print('\n\n\n-------->Congratulations!')

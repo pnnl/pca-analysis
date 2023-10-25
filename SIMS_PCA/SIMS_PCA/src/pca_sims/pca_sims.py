@@ -313,8 +313,10 @@ class pca_sims(object):
             # measured_masses DataFrame to see if any measured masses in our database correspond to the current entry, and if not, we leave these cells blank.
             # As a precondition, check first whether there is any assignment at all in the current row to analyze.
             if (positive_loading_table.at[ind, "Document Mass"] and positive_loading_table.at[ind, "Initial Peak Assignment"]):
+                # TODO Now that we've changed measured_mass to allow multiple comma-separated values, is it still fine to only check the first value?
                 cur_doc_mass = positive_loading_table.at[ind, "Document Mass"][0]
-                matching_array = np.array(self.measured_masses['document_mass'].eq(cur_doc_mass))
+                first_measured_masses = pd.DataFrame([mm[0] for mm in self.measured_masses['document_mass']])
+                matching_array = np.array(first_measured_masses.eq(cur_doc_mass))
 
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
@@ -334,8 +336,10 @@ class pca_sims(object):
             # measured_masses DataFrame to see if any measured masses in our database correspond to the current entry, and if not, we leave these cells blank.
             # As a precondition, check first whether there is any assignment at all in the current row to analyze.
             if (negative_loading_table.at[ind, "Document Mass"] and negative_loading_table.at[ind, "Initial Peak Assignment"]):
+                # TODO Now that we've changed measured_mass to allow multiple comma-separated values, is it still fine to only check the first value?
                 cur_doc_mass = negative_loading_table.at[ind, "Document Mass"][0]
-                matching_array = np.array(self.measured_masses['document_mass'].eq(cur_doc_mass))
+                first_measured_masses = pd.DataFrame([mm[0] for mm in self.measured_masses['document_mass']])
+                matching_array = np.array(first_measured_masses.eq(cur_doc_mass))
 
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
@@ -664,7 +668,7 @@ class pca_sims(object):
                 # Index 1 is Unit Mass, index 2 is Document Mass, index 5 is Measured Mass, index 6 is qualified peak assignment, index 7 is Updated Peak Assignment, 
                 # and index 8 is Updated Document Mass
                 cur_header_start = row.cells[0].text
-                cur_doc_mass = format_user_input(row.cells[2].text).split(",")[0]
+                cur_doc_masses = format_user_input(row.cells[2].text)
                 cur_measured_mass = format_user_input(row.cells[5].text)
                 cur_updated_peak_assignment = format_user_input(row.cells[7].text)
                 cur_updated_doc_mass = format_user_input(row.cells[8].text)
@@ -697,12 +701,12 @@ class pca_sims(object):
                     
                     # Update the measured masses if there is one in this row and we don't already have it in the measured_mass DataFrame. Do this after any updates to the peak
                     # assignments to make sure we get the most up-to-date assignment for the document_mass column in measured_mass.
-                    updated_doc_mass = cur_updated_doc_mass.split(",")[0] if cur_updated_doc_mass else cur_doc_mass
+                    updated_doc_mass = cur_updated_doc_mass if cur_updated_doc_mass else cur_doc_masses
                     if cur_measured_mass and (not updated_doc_mass in list(measured_mass['document_mass'].values)):
                         mm_size = len(measured_mass.index)
                         measured_mass.loc[mm_size, 'document_mass'] = updated_doc_mass
                         measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_mass
-                        measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(float(cur_measured_mass) - float(updated_doc_mass)), 6))
+                        measured_mass.loc[mm_size, 'deviation'] = str(np.round(abs(np.array(np.float_(cur_measured_mass.split(','))) - np.array(np.float_(updated_doc_mass.split(',')))), 6))
         
         # TODO When taking split(',')[0], what if there's an entry with multiple possible assignments and the first one isn't close enough to trigger the tolerance?
         #      Increased tolerance to account for this, but be aware of possibly throwing out a valid entry in future.
@@ -712,7 +716,7 @@ class pca_sims(object):
         valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
         measured_mass = measured_mass[
             measured_mass['document_mass'].apply( 
-                lambda x: any(np.isclose(float(x), valid_value, atol=1e-6) for valid_value in valid_masses)
+                lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-6) for valid_value in valid_masses)
                 )
             ]
 

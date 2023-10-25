@@ -1,4 +1,4 @@
-Experiment,Hifh P
+Experiment,High P
 Date,20230810
 Operator,Chris Pasture
 479,Sample-479

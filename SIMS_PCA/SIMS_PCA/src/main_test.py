@@ -29,12 +29,12 @@ class App(customtkinter.CTk):
 
         self.raw_data_label = customtkinter.CTkLabel(self, text='Enter name of raw data file with file extension here: ', width=40, height=20)
         self.raw_data_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        self.raw_data_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='Hifh P Pasture_Chris_Positive.TXT'), width=400, height=20)
+        self.raw_data_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='High P Pasture_Chris_Positive.TXT'), width=400, height=20)
         self.raw_data_entry.grid(row=1, column=1, padx=10, pady=5)
 
         self.report_label = customtkinter.CTkLabel(self, text='Enter desired name of report with file extension here: ', width=40, height=20)
         self.report_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
-        self.report_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='report.docx'), width=400, height=20)
+        self.report_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='Report High P Pasture_Chris_Positive.docx'), width=400, height=20)
         self.report_entry.grid(row=2, column=1, padx=10, pady=5)
 
 

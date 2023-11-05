@@ -96,7 +96,6 @@ class pca_sims_report(object):
         document.add_picture(score_plot, width=Inches(5))  # Score plot
         document.add_picture(loading_plot, width=Inches(5))  # Loading plot
 
-        # TODO Why is high score being used for everything?
         # Write the top 20 positive loading assignments
         document.add_paragraph("High score samples contain more:")
         p_pos = document.add_paragraph("", style="List Bullet")
@@ -127,7 +126,7 @@ class pca_sims_report(object):
 
 
     # Writes a PCA loading table to the document. Columns are:
-    # No. # | Unit Mass | Document Mass | Initial Peak Assignment | Initial Probabilities | Measured Mass | Updated Peak Assignment (from Measured Mass)
+    # Loading No. | Unit Mass | Document Mass | Initial Peak Assignment | Initial Probabilities | Measured Mass | Peak Assignment (Qualified)
     #  | Updated Peak Assignment (from Document Mass) | Updated Document Mass
     def write_table_page(self, pcacomp:int, positive_ion:bool, 
                          p_loading_table:pd.DataFrame, n_loading_table:pd.DataFrame):
@@ -258,6 +257,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                 else:                                                                                   # Anything else
                     p.add_run(str(cur_entry))
                 
+                # TODO Why are we checking t.cell(i+1,j).text.strip()?  Is j wrong?  Could new lines be fooling this into running every row anyway?
                 # Change text color to yellow if deviation is 100-200ppm and red if deviation is > 200ppm. Check the column header; only do this if 
                 # we are in the column 'Peak Assignment (Qualified)' (and if there is actually a value in the current cell of that column) so we can
                 # calculate the deviation.
@@ -265,13 +265,21 @@ def document_add_table(document:Document, df:pd.DataFrame):
                 if header_text == 'Peak Assignment (Qualified)' and t.cell(i+1,j).text.strip():
                     # Save the current measured mass (1 cell to the left) and list of document masses (4 cells to the left). Make sure to transform the doc
                     # masses into a NumPy array of floats, from which we can get the list of deviations between the measured mass and doc masses by broadcasting.
-                    cur_measured_mass = float(t.cell(i+1,j-1).text.strip())
-                    cur_doc_masses = np.array(t.cell(i+1,j-4).text.strip().split("\n"))
+                    cur_measured_masses = t.cell(i+1,j-1).text
+                    cur_measured_masses = cur_measured_masses.strip()
+                    cur_measured_masses = re.split('[,\n]+', cur_measured_masses)
+                    cur_measured_masses = np.array(cur_measured_masses)
+                    cur_measured_masses = cur_measured_masses.astype(float)
+
+                    cur_doc_masses = t.cell(i+1,j-4).text
+                    cur_doc_masses = cur_doc_masses.strip()
+                    cur_doc_masses = re.split('[,\n]+', cur_doc_masses)
+                    cur_doc_masses = np.array(cur_doc_masses)
                     cur_doc_masses = cur_doc_masses.astype(float)
                     
                     # Get deviation from first row of filtered measured_masses; note that in measured_masses, column index 2 is 'deviation'
-                    cur_deviations = abs(cur_measured_mass - cur_doc_masses)
-                    fractional_deviations = cur_deviations / cur_measured_mass
+                    cur_deviations = abs(cur_measured_masses - cur_doc_masses)
+                    fractional_deviations = cur_deviations / cur_measured_masses
                     
                     # Iterate over each run in the current paragraph and assign it the correct font color
                     paragraph_lines = p.text.split("\n")

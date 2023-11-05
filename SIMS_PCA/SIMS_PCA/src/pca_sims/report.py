@@ -263,30 +263,51 @@ def document_add_table(document:Document, df:pd.DataFrame):
                 # calculate the deviation.
                 header_text = t.cell(0,j).text
                 if header_text == 'Peak Assignment (Qualified)' and t.cell(i+1,j).text.strip():
-                    # Save the current measured mass (1 cell to the left) and list of document masses (4 cells to the left). Make sure to transform the doc
-                    # masses into a NumPy array of floats, from which we can get the list of deviations between the measured mass and doc masses by broadcasting.
-                    cur_measured_masses = t.cell(i+1,j-1).text
-                    cur_measured_masses = cur_measured_masses.strip()
-                    cur_measured_masses = re.split('[,\n]+', cur_measured_masses)
-                    cur_measured_masses = np.array(cur_measured_masses)
-                    cur_measured_masses = cur_measured_masses.astype(float)
+                    # Calculate the deviations between the measured masses and document masses and express them as floats; use these to highlight large errors.
+                    # TODO Note that cur_doc_masses is the old entry and cur_updated_doc_mass is the newest one. Currently, using newer entry to verify past measurements,
+                    # but data could be out of order and may have to use old entry according to others; change later if needed.
+                    # TODO Currently cutting off any elements beyond first n (i.e., if one array is longer than the other); may need to fix in future.
+                    try:
+                        # Save the current measured mass (1 cell to the left) and list of document masses (4 cells to the left). Make sure to transform the doc
+                        # masses into a NumPy array of floats, from which we can get the list of deviations between the measured mass and doc masses by broadcasting.
+                        cur_measured_masses = t.cell(i+1,j-1).text
+                        cur_measured_masses = cur_measured_masses.strip()
+                        cur_measured_masses = re.split('[,\n]+', cur_measured_masses)
+                        cur_measured_masses = np.array(cur_measured_masses)
+                        cur_measured_masses = cur_measured_masses.astype(float)
 
-                    cur_doc_masses = t.cell(i+1,j-4).text
-                    cur_doc_masses = cur_doc_masses.strip()
-                    cur_doc_masses = re.split('[,\n]+', cur_doc_masses)
-                    cur_doc_masses = np.array(cur_doc_masses)
-                    cur_doc_masses = cur_doc_masses.astype(float)
-                    
-                    # Get deviation from first row of filtered measured_masses; note that in measured_masses, column index 2 is 'deviation'
-                    cur_deviations = abs(cur_measured_masses - cur_doc_masses)
-                    fractional_deviations = cur_deviations / cur_measured_masses
+                        cur_doc_masses = t.cell(i+1,j-4).text
+                        cur_doc_masses = cur_doc_masses.strip()
+                        cur_doc_masses = re.split('[,\n]+', cur_doc_masses)
+                        cur_doc_masses = np.array(cur_doc_masses)
+                        cur_doc_masses = cur_doc_masses.astype(float)
+                    except:
+                        print("Error! Encountered row missing a Document Mass entry. Please fix the report before trying again.")
+                        sys.exit()
+
+                    # The measured masses array may be shorter than the document masses array; if so, just calculate the deviations for a number of 
+                    # elements equal to that found in the measured masses array. If the measured masses array is somehow larger, throw an exception
+                    # and tell the user to fix the report before running again.
+                    try:
+                        n_mm = len(cur_measured_masses)
+
+                        cur_deviations_array = abs(cur_doc_masses[:n_mm] - cur_measured_masses[:n_mm])
+                        cur_fractional_deviations_array = cur_deviations_array / cur_measured_masses
+                    except:
+                        print("Error! There are more measured masses than document masses in the row containing " + 
+                               "the following measured mass values: " + cur_measured_masses + "\n")
+                        print("Please fix the number of measured masses in this row, update the database, and run again.")
+                        sys.exit()
+
                     
                     # Iterate over each run in the current paragraph and assign it the correct font color
                     paragraph_lines = p.text.split("\n")
                     runs_ind = 0
                     line_ind = 0
-                    for l in range(len(paragraph_lines)):
-                        cur_fdev = fractional_deviations[l]
+                    # TODO Had to cut len(paragraph_lines) down to n_mm to prevent overflow of indices. May want to consider how to highlight
+                    # these last few rows in the future.
+                    for l in range(n_mm):
+                        cur_fdev = cur_fractional_deviations_array[l]
 
                         # Set the current font color based on the current fractional deviation
                         if cur_fdev > 0.0001 and cur_fdev < 0.0002:

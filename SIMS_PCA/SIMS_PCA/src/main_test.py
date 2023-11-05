@@ -159,7 +159,7 @@ class App(customtkinter.CTk):
         # Identify chemical components based on existing document mass; use user-specified string positive_or_negative_ion
         # to distinguish whether we should analyze using data from the .csv file containing + or - ions.
         # n is the maximum number of species classification possibilities to display in the table; change to desired value if needed.
-        self.pcasims.identify_components_from_file(n=2)
+        self.pcasims.identify_components_from_file(n=4)
 
         # Plot PCA result
         self.pcasims.plot_pca_result(self.max_pcacomp)

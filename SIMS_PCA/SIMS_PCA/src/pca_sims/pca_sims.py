@@ -178,7 +178,7 @@ class pca_sims(object):
     # Identify the PCA components using the file we are given.
     # Params:
     #   n - The number of species we desire to display in the report from the top n most probable ID candidates
-    def identify_components_from_file(self, n:int=2):
+    def identify_components_from_file(self, n:int):
         """Identify chemical components from the file passed to pca_sims."""
         print('-------->Finding assigned unit masses from file...')
         doc_mass = self.doc_mass

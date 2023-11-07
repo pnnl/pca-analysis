@@ -29,12 +29,12 @@ class App(customtkinter.CTk):
 
         self.raw_data_label = customtkinter.CTkLabel(self, text='Enter name of raw data file with file extension here: ', width=40, height=20)
         self.raw_data_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        self.raw_data_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='High P Pasture_Chris_Positive.TXT'), width=400, height=20)
+        self.raw_data_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='High P Pasture_Chris_Negative.TXT'), width=400, height=20)
         self.raw_data_entry.grid(row=1, column=1, padx=10, pady=5)
 
         self.report_label = customtkinter.CTkLabel(self, text='Enter desired name of report with file extension here: ', width=40, height=20)
         self.report_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
-        self.report_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='Report High P Pasture_Chris_Positive.docx'), width=400, height=20)
+        self.report_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value='Report High P Pasture_Chris_Negative.docx'), width=400, height=20)
         self.report_entry.grid(row=2, column=1, padx=10, pady=5)
 
 
@@ -44,7 +44,7 @@ class App(customtkinter.CTk):
         self.pos_or_neg = customtkinter.CTkSegmentedButton(self, width=400, height=80, command=self.pos_or_neg_button_callback)
         self.pos_or_neg.grid(row=3, column=1, padx=10, pady=10)
         self.pos_or_neg.configure(values=['positive', 'negative'])
-        self.pos_or_neg.set('positive')
+        self.pos_or_neg.set('negative')
 
 
         # Add checkboxes for selecting sample group numbers
@@ -78,7 +78,7 @@ class App(customtkinter.CTk):
         self.pca_dir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 
         # SIMS data
-        self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'Hifh P Pasture_Chris_Positive.TXT')
+        self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.TXT')
 
         # Store the subset of groups from the data above which the user wants to analyze
         self.f_group_numbers = os.path.join(self.pca_dir, 'sims-data/OriginalData/_groupnumbers.txt')
@@ -97,7 +97,7 @@ class App(customtkinter.CTk):
         self.f_doc_negative_mass = os.path.join(self.pca_dir, "sims-data", "negative_doc_mass_record.csv")
 
         # Indicates to rest of code whether we are handling positive or negative ions
-        self.positive_or_negative_ion = 'positive'
+        self.positive_or_negative_ion = 'negative'
         self.f_doc_mass = self.f_doc_positive_mass
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

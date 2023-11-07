@@ -323,7 +323,7 @@ class pca_sims(object):
                     i = np.argmax(matching_array)
                     # Add measured mass and qualified peak assignment to the loading table. Make sure to reformat "Measured Mass" values as a list to adhere to 
                     # conventions for other data in loading table. In addition, note that multiple "Measured Mass" values are separated with both a comma and a space.
-                    positive_loading_table.at[ind, "Measured Mass"] = self.measured_masses.at[i, 'measured_mass'].split(', ')
+                    positive_loading_table.at[ind, "Measured Mass"] = str(self.measured_masses.at[i, 'measured_mass']).split(', ')
                     positive_loading_table.at[ind, "Peak Assignment (Qualified)"] = positive_loading_table.at[ind, "Initial Peak Assignment"]
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
@@ -348,7 +348,7 @@ class pca_sims(object):
                     i = np.argmax(matching_array)
                     # Add measured mass and qualified peak assignment to the loading table. Make sure to reformat "Measured Mass" values as a list to adhere to 
                     # conventions for other data in loading table. In addition, note that multiple "Measured Mass" values are separated with both a comma and a space.
-                    negative_loading_table.at[ind, "Measured Mass"] = self.measured_masses.at[i, 'measured_mass'].split(', ')
+                    negative_loading_table.at[ind, "Measured Mass"] = str(self.measured_masses.at[i, 'measured_mass']).split(', ')
                     negative_loading_table.at[ind, "Peak Assignment (Qualified)"] = negative_loading_table.at[ind, "Initial Peak Assignment"]
         negative_loading_table.index = negative_loading_table["Unit Mass"]
 
@@ -737,7 +737,7 @@ class pca_sims(object):
             valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
             measured_mass = measured_mass[
                 measured_mass['document_mass'].apply( 
-                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-6) for valid_value in valid_masses)
+                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-4) for valid_value in valid_masses)
                     )
                 ]
         except:

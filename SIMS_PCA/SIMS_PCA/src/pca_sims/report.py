@@ -295,7 +295,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         cur_fractional_deviations_array = cur_deviations_array / cur_measured_masses
                     except:
                         print("Error! There are more measured masses than document masses in the row containing " + 
-                               "the following measured mass values: " + cur_measured_masses + "\n")
+                               "the following measured mass values: ", cur_measured_masses, "\n")
                         print("Please fix the number of measured masses in this row, update the database, and run again.")
                         sys.exit()
 

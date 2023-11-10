@@ -257,10 +257,11 @@ def document_add_table(document:Document, df:pd.DataFrame):
                 else:                                                                                   # Anything else
                     p.add_run(str(cur_entry))
                 
-                # TODO Why are we checking t.cell(i+1,j).text.strip()?  Is j wrong?  Could new lines be fooling this into running every row anyway?
-                # Change text color to yellow if deviation is 100-200ppm and red if deviation is > 200ppm. Check the column header; only do this if 
-                # we are in the column 'Peak Assignment (Qualified)' (and if there is actually a value in the current cell of that column) so we can
-                # calculate the deviation.
+                # TODO Why are we checking t.cell(i+1,j).text.strip()? Is j wrong? Could new lines be fooling this into running every row anyway?
+                # Change text color to yellow if deviation is 100-200ppm, red if deviation is > 200ppm, and green if < 100ppm. This should give a user
+                # a simple indicator to tell if they need to check the vailidity of the data or the peak assignments. Also, check the column header and 
+                # only apply highlighting we are in the column 'Peak Assignment (Qualified)' (and if there is actually a value in the current cell of 
+                # that column).
                 header_text = t.cell(0,j).text
                 if header_text == 'Peak Assignment (Qualified)' and t.cell(i+1,j).text.strip():
                     # Calculate the deviations between the measured masses and document masses and express them as floats; use these to highlight large errors.
@@ -315,7 +316,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         elif cur_fdev > 0.0002:
                             cur_color = RGBColor(255, 0, 0)         # Red
                         else:
-                            cur_color = RGBColor(0, 0, 0)           # Black
+                            cur_color = RGBColor(0, 255, 0)         # Green
                         
                         # Iterate over each run in the current line of the paragraph and change the font color of each to the current color.
                         # For paragraphs where there is no new line (i.e., cells with only one entry), exit when we hit the last index of p.runs.

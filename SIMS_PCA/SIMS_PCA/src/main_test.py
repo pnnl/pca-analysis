@@ -98,7 +98,7 @@ class App(customtkinter.CTk):
 
         # Indicates to rest of code whether we are handling positive or negative ions
         self.positive_or_negative_ion = 'negative'
-        self.f_doc_mass = self.f_doc_positive_mass
+        self.f_doc_mass = self.f_doc_positive_mass if self.positive_or_negative_ion == 'positive' else self.f_doc_negative_mass
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

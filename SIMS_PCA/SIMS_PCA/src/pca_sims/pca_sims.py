@@ -678,8 +678,8 @@ class pca_sims(object):
                 cur_updated_doc_masses = format_user_input(row.cells[8].text)
 
                 # Ignore the header row
-                if not ('No.' in cur_header_start):                    
-                    # Ignore rows without any updates
+                if not ('No.' in cur_header_start):
+                    # Update the document masses Dataframe if any are found in the two rightmost columns; otherwise, skip this step
                     if cur_updated_doc_masses or cur_updated_peak_assignment:
                         # Check user updates for errors
                         self.check_update_for_errors(cur_updated_peak_assignment, cur_updated_doc_masses)
@@ -732,12 +732,13 @@ class pca_sims(object):
         #      Increased tolerance to account for this, but be aware of possibly throwing out a valid entry in future.
         # TODO 1) Measured Mass entries that have been deleted in report aren't removed in measured_masses.csv, and 
         #      2) only changing the first instance of a Measured Mass entry will update the .csv file. Are these acceptable?
+        # TODO Filtering out masses that shouldn't be (e.g., 96.9696)
         # Make sure to filter out any old entries in measured_mass by only keeping those with a document_mass found in the doc_mass DataFrame
         try:
             valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
             measured_mass = measured_mass[
                 measured_mass['document_mass'].apply( 
-                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-4) for valid_value in valid_masses)
+                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-2) for valid_value in valid_masses)
                     )
                 ]
         except:

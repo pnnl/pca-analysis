@@ -287,13 +287,21 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         sys.exit()
 
                     # The measured masses array may be shorter than the document masses array; if so, just calculate the deviations for a number of 
-                    # elements equal to that found in the measured masses array. If the measured masses array is somehow larger, throw an exception
-                    # and tell the user to fix the report before running again.
+                    # elements equal to that found in the measured masses array. However, if there is only one measured mass entry, use that to calculate 
+                    # deviations and apply highlighting to all peak assignments. If the measured masses array is somehow larger than the document masses
+                    # array, throw an exception and tell the user to fix the report before running again.
                     try:
                         n_mm = len(cur_measured_masses)
+                        n_dm = len(cur_doc_masses)
 
-                        cur_deviations_array = abs(cur_doc_masses[:n_mm] - cur_measured_masses[:n_mm])
-                        cur_fractional_deviations_array = cur_deviations_array / cur_measured_masses
+                        if n_mm == 1:
+                            # Subtract single MM entry from all DM entries
+                            cur_deviations_array = abs(cur_doc_masses[:n_dm] - cur_measured_masses)
+                            cur_fractional_deviations_array = cur_deviations_array / cur_measured_masses
+                        else:
+                            # Otherwise, calculate deviations normally
+                            cur_deviations_array = abs(cur_doc_masses[:n_mm] - cur_measured_masses[:n_mm])
+                            cur_fractional_deviations_array = cur_deviations_array / cur_measured_masses
                     except:
                         print("Error! There are more measured masses than document masses in the row containing " + 
                                "the following measured mass values: ", cur_measured_masses, "\n")
@@ -301,30 +309,31 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         sys.exit()
 
                     
-                    # Iterate over each run in the current paragraph and assign it the correct font color
+                    # Iterate over each line in the qualified peak assignments column, and using the corresponding document masses along with their
+                    # deviations from the measured masses, highlight each in the correct font color. If there is only one measured mass, we will highlight
+                    # each line according to the deviations from that mass to make sure each possible peak assignment is qualified.
                     paragraph_lines = p.text.split("\n")
                     runs_ind = 0
                     line_ind = 0
-                    # TODO Had to cut len(paragraph_lines) down to n_mm to prevent overflow of indices. May want to consider how to highlight
-                    # these last few rows in the future.
-                    for l in range(n_mm):
+                    for l in range(len(cur_fractional_deviations_array)):   # Use the number of deviations calculated above to determine how many lines we have to highlight
                         cur_fdev = cur_fractional_deviations_array[l]
 
                         # Set the current font color based on the current fractional deviation
-                        if cur_fdev > 0.0001 and cur_fdev < 0.0002:
-                            cur_color = RGBColor(219, 165, 7)       # Yellow
+                        if cur_fdev < 0.0001:
+                            cur_color = RGBColor(0, 220, 50)         # Green
                         elif cur_fdev > 0.0002:
                             cur_color = RGBColor(255, 0, 0)         # Red
                         else:
-                            cur_color = RGBColor(0, 255, 0)         # Green
+                            cur_color = RGBColor(220, 165, 0)       # Yellow
+                        
                         
                         # Iterate over each run in the current line of the paragraph and change the font color of each to the current color.
                         # For paragraphs where there is no new line (i.e., cells with only one entry), exit when we hit the last index of p.runs.
                         while line_ind <= l and runs_ind < len(p.runs):
                             cur_run = p.runs[runs_ind]
 
-                            # Increment line index counter every time we hit a new line (keeps track of how runs correspond to characters in each 
-                            # line; some runs might be more or less than 1 character long)
+                            # Increment line index counter every time we hit a new line. Lines may have multiple runs, so this makes sure we get the
+                            # correct number of lines by only counting up on the new line character that signifies the end of each line.
                             if cur_run.text == '\n':
                                 line_ind += 1
 

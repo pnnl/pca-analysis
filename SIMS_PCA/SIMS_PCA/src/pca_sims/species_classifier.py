@@ -46,6 +46,7 @@ class species_classifier:
         residues = np.array(a - b)
         residues = residues[~pd.isnull(residues)]
         # print("\n--------> Residues: ", residues, "\n")
+        # TODO These uncertainties can be pretty high (e.g., 0.28) even in normal circumstances, making the probabilities very close. How to fix?
         self.uncertainty = np.std(abs(residues))
         # self.uncertainty = 0.03
         print("\n-------->Uncertainty: ", self.uncertainty, "\n")

@@ -313,10 +313,9 @@ class pca_sims(object):
             # measured_masses DataFrame to see if any measured masses in our database correspond to the current entry, and if not, we leave these cells blank.
             # As a precondition, check first whether there is any assignment at all in the current row to analyze.
             if (positive_loading_table.at[ind, "Document Mass"] and positive_loading_table.at[ind, "Initial Peak Assignment"]):
-                # TODO Now that we've changed measured_mass to allow multiple comma-separated values, is it still fine to only check the first value?
                 cur_doc_mass = positive_loading_table.at[ind, "Document Mass"][0]
-                first_measured_masses = pd.DataFrame([mm[0] for mm in self.measured_masses['document_mass']])
-                matching_array = np.array(first_measured_masses.eq(cur_doc_mass))
+                mm_dataframe_first_doc_masses = np.float_([mm[0] for mm in self.measured_masses['document_mass']])
+                matching_array = np.isclose(mm_dataframe_first_doc_masses, cur_doc_mass, atol=1e-1)
 
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
@@ -338,10 +337,9 @@ class pca_sims(object):
             # measured_masses DataFrame to see if any measured masses in our database correspond to the current entry, and if not, we leave these cells blank.
             # As a precondition, check first whether there is any assignment at all in the current row to analyze.
             if (negative_loading_table.at[ind, "Document Mass"] and negative_loading_table.at[ind, "Initial Peak Assignment"]):
-                # TODO Now that we've changed measured_mass to allow multiple comma-separated values, is it still fine to only check the first value?
                 cur_doc_mass = negative_loading_table.at[ind, "Document Mass"][0]
-                first_measured_masses = pd.DataFrame([mm[0] for mm in self.measured_masses['document_mass']])
-                matching_array = np.array(first_measured_masses.eq(cur_doc_mass))
+                mm_dataframe_first_doc_masses = np.float_([mm[0] for mm in self.measured_masses['document_mass']])
+                matching_array = np.isclose(mm_dataframe_first_doc_masses, cur_doc_mass, atol=1e-1)
 
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
@@ -717,7 +715,8 @@ class pca_sims(object):
                             mm_array = np.array(np.float_(cur_measured_masses.split(',')))
                             dm_array = np.array(np.float_(updated_doc_masses.split(',')))
                         except:
-                            print("Error! Encountered row missing a Document Mass entry. Please fix the report before trying again.")
+                            print("***Error! Encountered row containing a Measured Mass entry (see ", cur_measured_masses, ") but neither a Document Mass nor an", 
+                                  "Updated Document Mass entry. Please add one of these entries before trying again.***")
                             sys.exit()
                         # If these arrays have differing lengths, only take the first n elements, where n is the shorter array's length.
                         n = min(len(mm_array), len(dm_array))
@@ -738,11 +737,12 @@ class pca_sims(object):
             valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
             measured_mass = measured_mass[
                 measured_mass['document_mass'].apply( 
-                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-2) for valid_value in valid_masses)
+                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-1) for valid_value in valid_masses)
                     )
                 ]
         except:
-            print("Error! Encountered row missing a Document Mass entry. Please fix the report before trying again.")
+            print("***Error! Encountered row containing a Measured Mass entry (see ", cur_measured_masses, ") but neither a Document Mass nor an", 
+                                  "Updated Document Mass entry. Please add one of these entries before trying again.***")
             sys.exit()
 
         # Ensure unit masses are integers and that our Dataframe is sorted before writing it to the given file

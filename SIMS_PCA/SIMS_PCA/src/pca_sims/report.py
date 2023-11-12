@@ -320,7 +320,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
 
                         # Set the current font color based on the current fractional deviation
                         if cur_fdev < 0.0001:
-                            cur_color = RGBColor(0, 220, 50)         # Green
+                            cur_color = RGBColor(0, 220, 50)        # Green
                         elif cur_fdev > 0.0002:
                             cur_color = RGBColor(255, 0, 0)         # Red
                         else:

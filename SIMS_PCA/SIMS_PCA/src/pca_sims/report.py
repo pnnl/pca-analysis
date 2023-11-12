@@ -309,6 +309,8 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         sys.exit()
 
                     
+                    # TODO Order of MMs can become different from order of DMs after probabilities are assigned, making these deviations and highlights
+                    # incorrect. How to ensure we track the order so this doesn't happen?
                     # Iterate over each line in the qualified peak assignments column, and using the corresponding document masses along with their
                     # deviations from the measured masses, highlight each in the correct font color. If there is only one measured mass, we will highlight
                     # each line according to the deviations from that mass to make sure each possible peak assignment is qualified.

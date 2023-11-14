@@ -345,6 +345,10 @@ def document_add_table(document:Document, df:pd.DataFrame):
 
                             runs_ind += 1
 
+    # Add some text below the table that describes the color scheme
+    p = document.add_paragraph("Note: Highlight colors in the qualified peak assignment column represent the error relative to the measured mass(es) in that row. " +
+                               "Green signifies an error < 100ppm, yellow an error from 100 to 200ppm, and red an error > 200ppm.")
+
 
 # TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)
 # Parse strings representing the species assignments that we intend to add to a cell.

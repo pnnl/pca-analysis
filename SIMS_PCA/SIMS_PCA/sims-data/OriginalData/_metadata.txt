@@ -1,11 +1,11 @@
-Experiment,High P
+Experiment,Low P
 Date,20230810
 Operator,Chris Pasture
-479,Sample-479
-480,Sample-480
-482,Sample-482
-483,Sample-483
-484,Sample-484
-489,Sample-489
-490,Sample-490
-491,Sample-491
+531,Sample-531
+532,Sample-532
+537,Sample-537
+538,Sample-538
+539,Sample-539
+543,Sample-543
+544,Sample-544
+545,Sample-545

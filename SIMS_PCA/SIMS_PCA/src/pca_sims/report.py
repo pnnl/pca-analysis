@@ -209,9 +209,9 @@ class pca_sims_report(object):
 
         document.add_page_break()
         # TODO How to center plot?
-        p = document.add_paragraph()
-        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         document.add_picture('/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/output_sample/Scree Plot.png', width=Inches(6))  # (6" Score plots + 0.625" margin + 0.625" margin = 7.5" total)
+        last_paragraph = document.paragraphs[-1]
+        last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 
 
@@ -359,7 +359,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                             runs_ind += 1
 
     # Add some text below the table that describes the color scheme
-    p = document.add_paragraph("Note: Highlight colors in the qualified peak assignment column represent the error relative to the measured mass(es) in that row. " +
+    p = document.add_paragraph("Note: Highlighting of the qualified peak assignments represents the error in the document masses relative to the measured mass(es) in that row. " +
                                "Green signifies an error < 100ppm, yellow an error from 100 to 200ppm, and red an error > 200ppm.")
 
 

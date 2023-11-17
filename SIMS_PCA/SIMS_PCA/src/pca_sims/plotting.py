@@ -71,7 +71,7 @@ def plot_pca_result(
 
     except:
         print(traceback.print_exc())
-        print('***Error! Cannot Drawing Correct Scree Plot to Exports File!***')
+        print('***Error! Cannot Draw Correct Scree Plot to Exports File! Please Check Group Numbers File to Ensure 2 Or More Valid Group Numbers Are Selected.***')
         sys.exit()
 
     # EXTRACT PC1-PCmax_pcacomp

@@ -19,10 +19,10 @@ pcaDir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 outDir = os.path.join(pcaDir, 'output_sample')
 
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'positive'
+positive_or_negative_ion = 'negative'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Hifh P Pasture_Chris_Positive.TXT')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Low P Pasture_Chris_Negative.txt')
 
 # Store the subset of groups from the data above which the user wants to analyze
 f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/_groupnumbers.txt')
@@ -31,7 +31,7 @@ f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/_groupnumbers.txt
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/_metadata.txt')
 
 # SIMS-PCA report
-f_report = os.path.join(pcaDir, 'output_sample/report.docx')
+f_report = os.path.join(pcaDir, 'output_sample/Report Low P Pasture_Chris_Negative.docx')
 
 # The number of PCA components for which PCA plots will be created and loading tables will be generated in the report
 max_pcacomp = 5
@@ -83,7 +83,7 @@ else:
     # Identify chemical components based on existing document mass; use user-specified string positive_or_negative_ion
     # to distinguish whether we should analyze using data from the .csv file containing + or - ions.
     # n is the maximum number of species classification possibilities to display in the table; change to desired value if needed.
-    pcasims.identify_components_from_file(n=2)
+    pcasims.identify_components_from_file(n=4)
 
     # Plot PCA result
     pcasims.plot_pca_result(max_pcacomp=max_pcacomp)

@@ -202,6 +202,19 @@ class pca_sims_report(object):
                 p.add_run(', ')
             p.add_run("are mostly found in negative loadings, indicating that low PC{} score samples contain more {}.".format(pcacomp, ion_type))
     
+
+    # Add the bar chart of percentage explained variance for each PC
+    def add_scree_plot_page(self):
+        document = self.document
+
+        document.add_page_break()
+        # TODO How to center plot?
+        p = document.add_paragraph()
+        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        document.add_picture('/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/output_sample/Scree Plot.png', width=Inches(6))  # (6" Score plots + 0.625" margin + 0.625" margin = 7.5" total)
+
+
+
     def save(self):
         # TODO: Generate table of contents
 

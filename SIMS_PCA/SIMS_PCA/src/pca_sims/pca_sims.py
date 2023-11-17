@@ -263,6 +263,9 @@ class pca_sims(object):
             # PCA analysis of negative ToF-SIMS spectra
             for pcacomp in range(1,max_pcacomp+1):
                 self.generate_analysis_pcacomp(pcacomp)
+
+        # Add the bar chart of percentage explained variance for each PC
+        self.add_scree_plot()
         
         # Save the report
         self.report.save()
@@ -375,6 +378,11 @@ class pca_sims(object):
         # Analysis page
         self.report.write_analysis_page(pcacomp, self.positive_ion, 
                                         positive_loading_table, negative_loading_table, signals)
+
+
+    # Add the bar chart of percentage explained variance for each PC
+    def add_scree_plot(self):
+        self.report.add_scree_plot_page()
 
 
     # Create a loadings table from the PCA scores

@@ -47,7 +47,7 @@ class pca_sims(object):
             print('***Error! Cannot Find Correct Raw Data File!***')
             sys.exit()
 
-        # TODO We don't throw an error on numbers entered into f_group_numbers .txt file that don't match up with the samples. 
+        # TODO We don't throw an error on numbers entered into f_group_numbers .txt file that don't match up with the samples.
         #      We print all of them out, but incorrect numbers won't affect the filtering anyway. Is this assumption fine?
         # Read subset of group numbers on which we want to perform PCA from user-specified .csv file, then filter the raw data so that 
         # it only contains those columns
@@ -120,8 +120,10 @@ class pca_sims(object):
         self.f_measured_masses = os.path.join(self.pcaDir, 'sims-data/measured_masses.csv')
         self.measured_masses = pd.read_csv(self.f_measured_masses)
 
-        # Get the unit mass assignments from the chosen .csv document
-        self.doc_mass = pd.read_csv(f_doc_mass, index_col=0)
+        # Save the unit mass assignments from the chosen .csv document
+        self.f_doc_mass = f_doc_mass
+        self.doc_mass = pd.read_csv(f_doc_mass)
+        self.doc_mass.set_index(self.doc_mass['Unit Mass'], inplace=True)
 
     
     def perform_pca(self):
@@ -274,6 +276,8 @@ class pca_sims(object):
     def generate_analysis_pcacomp(self, pcacomp:int=1):
         """Generate the analysis for one pca component."""
 
+        doc_mass = self.doc_mass
+
         # ---------------- Plot pages ------------------
         score_plot = self.fig_scores_single_set[pcacomp-1]
 
@@ -323,9 +327,27 @@ class pca_sims(object):
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
+                    
+                    # Make sure our measured masses are in the same order as their corresponding peak assignments.
+                    assignments_unsorted = positive_loading_table.loc[ind,'Initial Peak Assignment']
+                    assignments_sorted = doc_mass.at[unit_mass, 'Assignment'].split(', ')
+                    mm_unsorted = self.measured_masses.at[i, 'measured_mass'].split(', ')
+
+                    # Since number of MMs can be shorter than the number of species, we have to be careful to only take a number of elements from unsorted_ordering
+                    # equal to the number of MMs.
+                    unsorted_ordering = [assignments_sorted.index(species) for species in assignments_unsorted]
+
+                    if (len(mm_unsorted) == len(unsorted_ordering)):     # If it matches assignment sorting length, use that ordering.
+                        mm_sorted = [str(mm_unsorted[j]) for j in unsorted_ordering[:len(mm_unsorted)]]
+                    elif (len(mm_unsorted) == 1):                        # We've got only one entry and don't need to do any sorting.
+                        mm_sorted = mm_unsorted
+                    else:                                                # Otherwise, MMs don't line up with DMs, so give the user an error message.
+                        print('***Error! Different number of measured and updated document masses detected. Fix the following measured masses:', mm_unsorted, '***')
+                        sys.exit()
+
                     # Add measured mass and qualified peak assignment to the loading table. Make sure to reformat "Measured Mass" values as a list to adhere to 
                     # conventions for other data in loading table. In addition, note that multiple "Measured Mass" values are separated with both a comma and a space.
-                    positive_loading_table.at[ind, "Measured Mass"] = str(self.measured_masses.at[i, 'measured_mass']).split(', ')
+                    positive_loading_table.at[ind, "Measured Mass"] = mm_sorted
                     positive_loading_table.at[ind, "Peak Assignment (Qualified)"] = positive_loading_table.at[ind, "Initial Peak Assignment"]
         positive_loading_table.index = positive_loading_table["Unit Mass"]
 
@@ -347,9 +369,27 @@ class pca_sims(object):
                 if (np.sum(matching_array) >= 1):
                     # Find the index of the assignment that matches the species
                     i = np.argmax(matching_array)
+
+                    # Make sure our measured masses are in the same order as their corresponding peak assignments.
+                    assignments_unsorted = negative_loading_table.loc[ind,'Initial Peak Assignment']
+                    assignments_sorted = doc_mass.at[unit_mass, 'Assignment'].split(', ')
+                    mm_unsorted = self.measured_masses.at[i, 'measured_mass'].split(', ')
+
+                    # Since number of MMs can be shorter than the number of species, we have to be careful to only take a number of elements from unsorted_ordering
+                    # equal to the number of MMs.
+                    unsorted_ordering = [assignments_sorted.index(species) for species in assignments_unsorted]
+
+                    if (len(mm_unsorted) == len(unsorted_ordering)):     # If it matches assignment sorting length, use that ordering.
+                        mm_sorted = [mm_unsorted[j] for j in unsorted_ordering[:len(mm_unsorted)]]
+                    elif (len(mm_unsorted) == 1):                        # We've got only one entry and don't need to do any sorting.
+                        mm_sorted = mm_unsorted
+                    else:                                                # Otherwise, MMs don't line up with DMs, so give the user an error message.
+                        print('***Error! Different number of measured and updated document masses detected. Fix the following measured masses:', mm_unsorted, '***')
+                        sys.exit()
+
                     # Add measured mass and qualified peak assignment to the loading table. Make sure to reformat "Measured Mass" values as a list to adhere to 
                     # conventions for other data in loading table. In addition, note that multiple "Measured Mass" values are separated with both a comma and a space.
-                    negative_loading_table.at[ind, "Measured Mass"] = str(self.measured_masses.at[i, 'measured_mass']).split(', ')
+                    negative_loading_table.at[ind, "Measured Mass"] = mm_sorted
                     negative_loading_table.at[ind, "Peak Assignment (Qualified)"] = negative_loading_table.at[ind, "Initial Peak Assignment"]
         negative_loading_table.index = negative_loading_table["Unit Mass"]
 
@@ -659,10 +699,10 @@ class pca_sims(object):
     # Update the assignment documents using user-entered masses and the peak assignments
     # Parameters:
     #   positive_or_negative_ion - Distinguishes whether to update positive_doc_mass_record.csv (if = 'positive') or negative_doc_mass_record.csv (if = 'negative')
-    def update_classifications(self, f_doc_mass:str, f_report:str):
-        doc_mass = pd.read_csv(f_doc_mass)
-        doc_mass.set_index(doc_mass['Unit Mass'], inplace=True)
+    def update_classifications(self, f_report:str):
         measured_mass = pd.DataFrame({'document_mass':[], 'measured_mass':[], 'deviation':[]})
+        
+        doc_mass = self.doc_mass
         
         # Try to generate the report from the path the user gave. If the report hasn't been generated yet, tell the user to do so first.
         try:
@@ -685,20 +725,52 @@ class pca_sims(object):
 
                 # Ignore the header row
                 if not ('No.' in cur_header_start):
-                    # Update the document masses Dataframe if any are found in the two rightmost columns; otherwise, skip this step
+                    # Check user updates for errors before we do anything else. Throw an error to the user if there is one.
+                    self.check_update_for_errors(cur_updated_peak_assignment, cur_updated_doc_masses)
+
+
+                    # Sort the user inputs from least to greatest so that they go into the document in a consistent order. Use the document
+                    # mass sort order to sort the measured masses and the updated document mass sort order to sort the peak assignments.
+                    doc_masses_unsorted = cur_doc_masses.split(', ')
+                    doc_masses_sorted = cur_doc_masses.split(', ')
+                    doc_masses_sorted.sort()
+                    mm_unsorted = cur_measured_masses.split(', ')
+                    updated_doc_masses_unsorted = cur_updated_doc_masses.split(', ')
+                    updated_doc_masses_sorted = cur_updated_doc_masses.split(', ')
+                    updated_doc_masses_sorted.sort()
+                    updated_peak_assignments_unsorted = cur_updated_peak_assignment.split(', ')
+                    
+                    update_unsorted_ordering = [updated_doc_masses_unsorted.index(mass) for mass in updated_doc_masses_sorted]
+                    unsorted_ordering = [doc_masses_unsorted.index(mass) for mass in doc_masses_sorted]
+
+                    # Need to be careful about sorting measured masses since the number of entries might vary. Also account for using updated or old document masses.
+                    if (len(mm_unsorted) == len(update_unsorted_ordering)):     # If it matches update length, use the update's ordering.   
+                        mm_sorted = [mm_unsorted[i] for i in update_unsorted_ordering[:len(mm_unsorted)]]
+                    elif (len(mm_unsorted) == 1):                               # If there's only one entry, we don't need to do any sorting.
+                        mm_sorted = mm_unsorted
+                    elif (len(mm_unsorted) == len(unsorted_ordering)):          # If there isn't a single element and it matches the original number of doc masses, use that ordering instead.
+                        mm_sorted = [mm_unsorted[i] for i in unsorted_ordering[:len(mm_unsorted)]]
+                    else:                                                       # Otherwise, MMs don't line up with DMs, so give the user an error message.
+                        print('***Error! Different number of measured and updated document masses detected. Fix the following measured masses:', mm_unsorted, '***')
+                        sys.exit()
+                        
+                    updated_peak_assignments_sorted = [updated_peak_assignments_unsorted[i] for i in update_unsorted_ordering[:len(updated_peak_assignments_unsorted)]]
+
+                    cur_doc_masses = ', '.join(doc_masses_sorted)
+                    cur_measured_masses = ', '.join(mm_sorted)
+                    cur_updated_peak_assignment = ', '.join(updated_peak_assignments_sorted)
+                    cur_updated_doc_masses = ', '.join(updated_doc_masses_sorted)
+
+
+                    # Update the document masses Dataframe if any are found in the two rightmost columns; otherwise, skip this step.
                     if cur_updated_doc_masses or cur_updated_peak_assignment:
-                        # Check user updates for errors
-                        self.check_update_for_errors(cur_updated_peak_assignment, cur_updated_doc_masses)
-
-                        cur_unit_mass = int(row.cells[1].text.strip())
-                        # print(cur_unit_mass, cur_doc_mass, cur_updated_doc_mass, cur_updated_peak_assignment)
-
                         # In each row of the table, we should act on one of a few cases:
                         # Case 1) The user entered both an updated mass and an updated peak assignment that already exist in the document.
                         #         In this case, we find the corresponding 'Unit Mass' in the document and update its 'Assignment' and 'Document Mass'
                         # Case 2) The user entered both an updated mass and an updated peak assignment that don't exist.
                         #         In this case, just find the corresponding slot in the (ordered) 'Unit Mass' column of the doc. Then, insert a new entry.
                         # Case 3) None of the above cases was satisfied, meaning that the user made an error in their data entry which they must fix, so we throw an error.
+                        cur_unit_mass = int(row.cells[1].text.strip())
                         if cur_updated_doc_masses and cur_updated_peak_assignment:
                             if cur_unit_mass in doc_mass.index:
                                 doc_mass.at[cur_unit_mass,'Assignment'] = cur_updated_peak_assignment
@@ -708,20 +780,22 @@ class pca_sims(object):
                         else:
                             print('***Error! Invalid data update. Check each of your table entries to ensure that you entered BOTH an updated peak assignment and updated document mass.***')
                             sys.exit()
-                    
+                
+
+                    # Get the latest doc masses (i.e., from the update column if there is one; otherwise, just use the ones in the normal doc masses column).
+                    latest_doc_masses = cur_updated_doc_masses if cur_updated_doc_masses else cur_doc_masses
+
+
                     # Update the measured masses if there is one in this row and we don't already have it in the measured_mass DataFrame. Do this after any updates to the peak
                     # assignments to make sure we get the most up-to-date assignment for the document_mass column in measured_mass.
-                    updated_doc_masses = cur_updated_doc_masses if cur_updated_doc_masses else cur_doc_masses
-                    if cur_measured_masses and (not updated_doc_masses in list(measured_mass['document_mass'].values)):
+                    if cur_measured_masses and (not latest_doc_masses in list(measured_mass['document_mass'].values)):
                         mm_size = len(measured_mass.index)
 
                         # Calculate the deviations between the measured masses and document masses and express them as floats to be stored for later.
-                        # TODO Note that cur_doc_masses is the old entry and cur_updated_doc_mass is the newest one. Currently, using newer entry to verify past measurements,
-                        # but data could be out of order and may have to use old entry according to others; change later if needed.
                         # TODO Currently cutting off any elements beyond first n (i.e., if one array is longer than the other); may need to fix in future.
                         try:
                             mm_array = np.array(np.float_(cur_measured_masses.split(',')))
-                            dm_array = np.array(np.float_(updated_doc_masses.split(',')))
+                            dm_array = np.array(np.float_(latest_doc_masses.split(',')))
                         except:
                             print("***Error! Encountered row containing a Measured Mass entry (see ", cur_measured_masses, ") but neither a Document Mass nor an", 
                                   "Updated Document Mass entry. Please add one of these entries before trying again.***")
@@ -731,7 +805,7 @@ class pca_sims(object):
                         difference_array = abs(mm_array[:n] - dm_array[:n])
 
                         measured_mass.loc[mm_size, 'measured_mass'] = cur_measured_masses
-                        measured_mass.loc[mm_size, 'document_mass'] = updated_doc_masses
+                        measured_mass.loc[mm_size, 'document_mass'] = latest_doc_masses
                         difference_list = list(np.round(abs(difference_array), 6))
                         measured_mass.loc[mm_size, 'deviation'] = ','.join(map(str, difference_list))
         
@@ -739,13 +813,12 @@ class pca_sims(object):
         #      Increased tolerance to account for this, but be aware of possibly throwing out a valid entry in future.
         # TODO 1) Measured Mass entries that have been deleted in report aren't removed in measured_masses.csv, and 
         #      2) only changing the first instance of a Measured Mass entry will update the .csv file. Are these acceptable?
-        # TODO Filtering out masses that shouldn't be (e.g., 96.9696)
         # Make sure to filter out any old entries in measured_mass by only keeping those with a document_mass found in the doc_mass DataFrame
         try:
             valid_masses = [float(val.split(',')[0]) for val in doc_mass['Document Mass'].unique()]
             measured_mass = measured_mass[
                 measured_mass['document_mass'].apply( 
-                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=1e-1) for valid_value in valid_masses)
+                    lambda x: any(np.isclose(float(x.split(',')[0]), valid_value, atol=2e-1) for valid_value in valid_masses)
                     )
                 ]
         except:
@@ -759,7 +832,7 @@ class pca_sims(object):
         # print(doc_mass)
 
         # Write updated document masses to file
-        doc_mass.to_csv(f_doc_mass, index=False)
+        doc_mass.to_csv(self.f_doc_mass, index=False)
         measured_mass.to_csv(self.f_measured_masses, index=False)
 
 
@@ -769,6 +842,10 @@ class pca_sims(object):
     #   cur_updated_peak_assignment - str of comma-separated values; each one *should* be a valid species ID
     #   cur_updated_doc_mass - str of comma-separated values; each one *should* be able to be converted to a valid float
     def check_update_for_errors(self, cur_updated_peak_assignment, cur_updated_doc_mass):
+        # Empty entries are fine, so we can exit early if this is the case.
+        if (len(cur_updated_peak_assignment) == 0) and (len(cur_updated_doc_mass) == 0):
+            return
+        
         if len(cur_updated_peak_assignment.split(",")) == 1:
             valid_updated_peak_assignment = (is_number(cur_updated_peak_assignment) == False) or not cur_updated_peak_assignment
         else:

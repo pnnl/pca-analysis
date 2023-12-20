@@ -73,7 +73,7 @@ if (do_update == 'y') or (do_update == 'Y'):
     print('-------->Updating Peak Assignments from User Changes to Report...')
 
     # Perform database update
-    pcasims.update_classifications(f_doc_mass, f_report)
+    pcasims.update_classifications(f_report)
 
     print('-------->Done.')
 else:

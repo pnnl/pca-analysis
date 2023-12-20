@@ -24,10 +24,10 @@ class pca_sims_report(object):
         # Set the page margins
         sections = self.document.sections
         for section in sections:
-            section.top_margin = Inches(0.4)
-            section.bottom_margin = Inches(0.4)
-            section.left_margin = Inches(0.4)
-            section.right_margin = Inches(0.4)
+            section.top_margin = Inches(0.3)
+            section.bottom_margin = Inches(0.3)
+            section.left_margin = Inches(0.3)
+            section.right_margin = Inches(0.3)
 
         # Title page
         self._create_title_page(ion_sign)
@@ -208,8 +208,7 @@ class pca_sims_report(object):
         document = self.document
 
         document.add_page_break()
-        # TODO How to center plot?
-        document.add_picture('/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/output_sample/Scree Plot.png', width=Inches(6))  # (6" Score plots + 0.625" margin + 0.625" margin = 7.5" total)
+        document.add_picture('/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/output_sample/Scree Plot.png', width=Inches(7))  # (7" Score plots + 0.3" margin + 0.3" margin = 7.6" total)
         last_paragraph = document.paragraphs[-1]
         last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
@@ -296,7 +295,7 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         cur_doc_masses = np.array(cur_doc_masses)
                         cur_doc_masses = cur_doc_masses.astype(float)
                     except:
-                        print("Error! Encountered row missing a Document Mass entry. Please fix the report before trying again.")
+                        print('Error! Encountered row with missing or badly formatted entry %f at (%d,%d) of table:' % (cur_group, i, j))
                         sys.exit()
 
                     # The measured masses array may be shorter than the document masses array; if so, just calculate the deviations for a number of 
@@ -322,12 +321,9 @@ def document_add_table(document:Document, df:pd.DataFrame):
                         sys.exit()
 
                     
-                    # TODO Order of MMs can become different from order of DMs after probabilities are assigned, making these deviations and highlights
-                    # incorrect. How to ensure we track the order so this doesn't happen?
                     # Iterate over each line in the qualified peak assignments column, and using the corresponding document masses along with their
                     # deviations from the measured masses, highlight each in the correct font color. If there is only one measured mass, we will highlight
                     # each line according to the deviations from that mass to make sure each possible peak assignment is qualified.
-                    paragraph_lines = p.text.split("\n")
                     runs_ind = 0
                     line_ind = 0
                     for l in range(len(cur_fractional_deviations_array)):   # Use the number of deviations calculated above to determine how many lines we have to highlight
@@ -358,9 +354,10 @@ def document_add_table(document:Document, df:pd.DataFrame):
 
                             runs_ind += 1
 
-    # Add some text below the table that describes the color scheme
+    # Add some text below the table that describes the color scheme. Set it to a small font size so it doesn't take up too much space.
     p = document.add_paragraph("Note: Highlighting of the qualified peak assignments represents the error in the document masses relative to the measured mass(es) in that row. " +
                                "Green signifies an error < 100ppm, yellow an error from 100 to 200ppm, and red an error > 200ppm.")
+    p.runs[-1].font.size = Pt(9)
 
 
 # TODO Superscripting is done wrong on - sign after a number and for ? marks (for example: see SNO2-?)

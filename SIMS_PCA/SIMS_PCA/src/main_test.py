@@ -142,7 +142,7 @@ class App(customtkinter.CTk):
         print('-------->Updating Peak Assignments from User Changes to Report...')
 
         # Perform database update
-        self.pcasims.update_classifications(self.f_doc_mass, self.f_report)
+        self.pcasims.update_classifications(self.f_report)
 
         print('-------->Done.')
 

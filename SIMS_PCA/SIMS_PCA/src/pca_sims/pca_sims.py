@@ -137,6 +137,7 @@ class pca_sims(object):
             samplelist=scaled_data.index
             labels=['PC'+str(x) for x in range(1,self.ncomp+1)]
 
+            # TODO Add error for case where no group numbers from file match up with data (see line 143).
             # PCA
             pca=PCA()
             pca.fit(scaled_data)

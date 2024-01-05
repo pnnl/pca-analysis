@@ -178,7 +178,7 @@ class App(customtkinter.CTk):
     # ------------------------------------------------------------- Set up backend input based on user changes  -----------------------------------------------------------------
     def update_pca_instance(self):
         # Update PCA directory
-        if (('pca-analysis/SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
+        if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
             self.pca_dir = self.pca_dir_entry.get()
             print('-------->Processed PCA directory successfully.')
         elif (not self.pca_dir_entry.get()):

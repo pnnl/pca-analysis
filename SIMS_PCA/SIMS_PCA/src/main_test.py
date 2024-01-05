@@ -122,12 +122,36 @@ class App(customtkinter.CTk):
     # TODO Change from directly editing file to scrollable checkbox dropdown contained in UI
     # Callback on button_sample_groups that opens the sample groups file for the user to edit
     def sample_group_callback(self):
+        # Update PCA directory
+        if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
+            self.pca_dir = self.pca_dir_entry.get()
+            self.f_group_numbers = os.path.join(self.pca_dir, 'sims-data/OriginalData/_groupnumbers.txt')
+            print('-------->Processed PCA directory successfully.')
+        elif (not self.pca_dir_entry.get()):
+            print('***Error! Empty entry. Please enter text and try again.***')
+            raise ValueError
+        else:
+            print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
+            raise ValueError
+        
         subprocess.call(['notepad.exe', self.f_group_numbers])
 
 
     # TODO Change from directly editing file to CTkEntries contained in UI
     # Callback on button_metadata that opens the metadata file for the user to edit
     def metadata_callback(self):
+        # Update PCA directory
+        if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
+            self.pca_dir = self.pca_dir_entry.get()
+            self.f_metadata = os.path.join(self.pca_dir, 'sims-data/OriginalData/_metadata.txt')
+            print('-------->Processed PCA directory successfully.')
+        elif (not self.pca_dir_entry.get()):
+            print('***Error! Empty entry. Please enter text and try again.***')
+            raise ValueError
+        else:
+            print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
+            raise ValueError
+        
         subprocess.call(['notepad.exe', self.f_metadata])
 
 
@@ -177,9 +201,11 @@ class App(customtkinter.CTk):
 
     # ------------------------------------------------------------- Set up backend input based on user changes  -----------------------------------------------------------------
     def update_pca_instance(self):
-        # Update PCA directory
+        # Update PCA directory along with group numbers and metadata
         if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
             self.pca_dir = self.pca_dir_entry.get()
+            self.f_group_numbers = os.path.join(self.pca_dir, 'sims-data/OriginalData/_groupnumbers.txt')
+            self.f_metadata = os.path.join(self.pca_dir, 'sims-data/OriginalData/_metadata.txt')
             print('-------->Processed PCA directory successfully.')
         elif (not self.pca_dir_entry.get()):
             print('***Error! Empty entry. Please enter text and try again.***')

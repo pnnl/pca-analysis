@@ -2,7 +2,7 @@
 ..
 .. SPDX-License-Identifier: BSD-3-Clause
 
-Disclamer Notice
+Disclaimer Notice
 ================
 
 This material was prepared as an account of work sponsored by an agency of the

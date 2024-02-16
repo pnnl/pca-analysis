@@ -263,10 +263,17 @@ class CatalogWindow(ctk.CTkToplevel):
         # Get columns from DataFrame
         treeview['columns'] = tuple(self.catalog.columns)
         # Remove the 0th column since we don't need parent / child relationships.
-        treeview.column('#0', width=0, stretch='no')
-        # Add all the columns and headers to the treeview
+        treeview.column('#0', width=0, stretch=False)
+        # Add the rest of the columns one at a time so we can control their widths independently.
+        treeview.column(treeview['columns'][0], anchor='center', width=80,  minwidth=40,  stretch=False)
+        treeview.column(treeview['columns'][1], anchor='center', width=120, minwidth=100, stretch=False)
+        treeview.column(treeview['columns'][2], anchor='center', width=120, minwidth=100, stretch=False)
+        treeview.column(treeview['columns'][3], anchor='center', width=150, minwidth=100, stretch=False)
+        treeview.column(treeview['columns'][4], anchor='center', width=170, minwidth=100, stretch=False)
+        treeview.column(treeview['columns'][5], anchor='center',            minwidth=200, stretch=True )
+        
+        # Add all column headers to the treeview
         for column in treeview['columns']:
-            treeview.column(column, anchor='center', minwidth=10, stretch=True)
             treeview.heading(column, anchor='center', text=column)
         
         # Add all DataFrame entries to treeview
@@ -274,7 +281,7 @@ class CatalogWindow(ctk.CTkToplevel):
             treeview.insert(parent='', index='end', iid=index, values=list(row.values))
 
         # Locate the treeview / table on the window
-        treeview.grid(row=0, padx=20, pady=20, sticky='ns', columnspan=1)
+        treeview.grid(row=0, padx=20, pady=20, sticky='nsew', columnspan=1)
 
 
         # Add button to save and exit
@@ -292,6 +299,24 @@ class CatalogWindow(ctk.CTkToplevel):
         treestyle.configure("Treeview", background=bg_color, foreground=text_color, fieldbackground=bg_color, borderwidth=0)
         treestyle.map('Treeview', background=[('selected', bg_color)], foreground=[('selected', selected_color)])
         self.bind("<<TreeviewSelect>>", lambda event: self.focus_set())
+
+        # TODO Better style for catalog below?
+        # style = ttk.Style()
+        # style.theme_use("default")
+        # style.configure("Treeview",
+        #                 background="#2a2d2e",
+        #                 foreground="white",
+        #                 rowheight=25,
+        #                 fieldbackground="#343638",
+        #                 bordercolor="#343638",
+        #                 borderwidth=0)
+        # style.map('Treeview', background=[('selected', '#22559b')])
+        # style.configure("Treeview.Heading",
+        #                 background="#565b5e",
+        #                 foreground="white",
+        #                 relief="flat")
+        # style.map("Treeview.Heading",
+        #             background=[('active', '#3484F0')])
         # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # Saves current catalog and exits window

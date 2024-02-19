@@ -79,6 +79,9 @@ class App(ctk.CTk):
         # SIMS data
         self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.txt')
 
+        # TODO Finish
+        self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
+
         # TODO Transition --> catalog
         # Store the subset of groups from the data above which the user wants to analyze
         self.f_group_numbers = os.path.join(self.pca_dir, 'sims-data/OriginalData/_groupnumbers.txt')
@@ -258,7 +261,7 @@ class CatalogWindow(ctk.CTkToplevel):
         self.catalog = catalog_df
 
         # Add treeview (table) to display catalog information
-        treeview = ttk.Treeview(self, height=6)
+        treeview = ttk.Treeview(self, height=catalog_df.shape[0], selectmode='extended')
 
         # Get columns from DataFrame
         treeview['columns'] = tuple(self.catalog.columns)
@@ -282,6 +285,7 @@ class CatalogWindow(ctk.CTkToplevel):
 
         # Locate the treeview / table on the window
         treeview.grid(row=0, padx=20, pady=20, sticky='nsew', columnspan=1)
+        self.catalog_treeview = treeview
 
 
         # Add button to save and exit
@@ -321,12 +325,15 @@ class CatalogWindow(ctk.CTkToplevel):
 
     # Saves current catalog and exits window
     def save_callback(self):
-        # TODO Finish
-        # Saves the catalog file(s) in the default folder location
+        # Save the rows that the user has selected to a new DataFrame, which we in turn save to a .csv in the Catalog folder
+        selected_rows = self.catalog.iloc[list(self.catalog_treeview.selection())]
+        selected_rows.to_csv(os.path.join(app.catalog_dir, 'selected_data.csv'), index=False)
 
-        # TODO CLOSES EVERYTHING
-        # Close the window
+        # TODO CLOSES EVERYTHING, NEED TO ONLY CLOSE CATALOG WINDOW
+        # Close the catalog window
         self.quit()
+
+        print('-------->Saved catalog selection to file.')
 
 
 # --------------------------------------------------------------------------- Run the application ---------------------------------------------------------------------------

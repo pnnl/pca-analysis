@@ -329,9 +329,8 @@ class CatalogWindow(ctk.CTkToplevel):
         selected_rows = self.catalog.iloc[list(self.catalog_treeview.selection())]
         selected_rows.to_csv(os.path.join(app.catalog_dir, 'selected_data.csv'), index=False)
 
-        # TODO CLOSES EVERYTHING, NEED TO ONLY CLOSE CATALOG WINDOW
         # Close the catalog window
-        self.quit()
+        self.destroy()
 
         print('-------->Saved catalog selection to file.')
 

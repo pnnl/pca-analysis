@@ -19,10 +19,10 @@ pcaDir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 outDir = os.path.join(pcaDir, 'output_sample')
 
 # Indicates to rest of code whether we are handling positive or negative ions
-positive_or_negative_ion = 'negative'
+positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/Low P Pasture_Chris_Negative.txt')
+f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/High P Pasture_Chris_Positive.txt')
 
 # Store the subset of groups from the data above which the user wants to analyze
 f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/_groupnumbers.txt')
@@ -31,7 +31,7 @@ f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/_groupnumbers.txt
 f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/_metadata.txt')
 
 # SIMS-PCA report
-f_report = os.path.join(pcaDir, 'output_sample/Report Low P Pasture_Chris_Negative.docx')
+f_report = os.path.join(pcaDir, 'output_sample/Report High P Pasture_Chris_Positive.docx')
 
 # The number of PCA components for which PCA plots will be created and loading tables will be generated in the report
 max_pcacomp = 5
@@ -51,6 +51,7 @@ else:
     print('***Error! Invalid input for positive_or_negative_ion; choose \'positive\' or \'negative\'***')
     sys.exit()
 
+# TODO Update with catalog directory
 # Initialize the pca_sims instance
 pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, positive_or_negative_ion, f_group_numbers)
 

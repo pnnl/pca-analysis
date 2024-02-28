@@ -20,15 +20,16 @@ negative_ion_category = ["Hydrocarbons", "Nitrogen-containing organics", "SiOx",
 
 class pca_sims(object):
 
+    # TODO Update using new arguments
     def __init__(
         self,
         f_rawsims_data: str,
-        f_metadata: str,
         f_doc_mass: str,
         pcaDir: str,
         outDir: str,
         positive_or_negative_ion: str,
-        f_group_numbers: str
+        catalog_dir: str,
+        selected_data: pd.DataFrame
     ):
         print('\n-------->Reading Data...')
         # Read SIMS data
@@ -47,13 +48,12 @@ class pca_sims(object):
             print('***Error! Cannot Find Correct Raw Data File!***')
             sys.exit()
 
-        # TODO We don't throw an error on numbers entered into f_group_numbers .txt file that don't match up with the samples.
+        # TODO We don't throw an error on group numbers from catalog file that don't match up with the samples.
         #      We print all of them out, but incorrect numbers won't affect the filtering anyway. Is this assumption fine?
-        # Read subset of group numbers on which we want to perform PCA from user-specified .csv file, then filter the raw data so that 
-        # it only contains those columns
+        # Read subset of group numbers on which we want to perform PCA from user-generated selected_data DataFrame, 
+        # then filter the raw data so that it only contains those columns
         try:
-            group_nums = pd.read_csv(f_group_numbers)
-            group_nums = group_nums['Group'].unique().tolist()
+            group_nums = selected_data['Sample #'].unique().tolist()
             group_nums.sort()
             print('\n\tSample group numbers: ', group_nums, '\n')
 
@@ -71,26 +71,26 @@ class pca_sims(object):
         
         # Read data description
         description = {}
-        metadata_df = pd.read_csv(f_metadata, index_col=0, header=None)
-        description['experiment'] = metadata_df.loc['Experiment',1]
-        description['date'] = metadata_df.loc['Date',1]
-        description['operator'] = metadata_df.loc['Operator',1]
+        description['experiment'] = selected_data['Sample Short Name'].unique().tolist()    # TODO What should this be?
+        description['date'] = selected_data['Testing Date'].unique().tolist()
+        description['operator'] = selected_data['Operator'].unique().tolist()
 
         # Extract the sample names (e.g., Goethite-Tannic Acid 1400 ppm) from the metadata file. Note that we
         # must exclude the first 4 lines since they include other information.
         sample_description_set = []
-        n_samples = metadata_df.shape[0] - 3
+        n_samples = len(group_nums)
         for i in range(n_samples):
-            sample_number      = metadata_df.index[i+3]
-            sample_description = metadata_df.loc[sample_number,1]
+            # TODO Do we need to sort again?
+            sample_number      = selected_data.at[i,0]
+            sample_description = selected_data.at[i,4]
             sample_description_set.append([int(sample_number), str(sample_description)])
         
         nmass, ncomp = rawdata.shape
 
         self.f_rawsims_data         = f_rawsims_data
-        self.f_metadata             = f_metadata
         self.pcaDir                 = pcaDir
         self.outDir                 = outDir
+        self.group_numbers          = group_nums
         self.description            = description
         self.sample_description_set = sample_description_set
         self.rawdata                = rawdata
@@ -98,7 +98,7 @@ class pca_sims(object):
         self.mass_raw               = mass_raw
         self.nmass                  = nmass
         self.ncomp                  = ncomp
-        self.f_group_numbers        = f_group_numbers
+        self.selected_data          = selected_data
 
         if positive_or_negative_ion == 'positive':
             self.positive_ion = True
@@ -238,7 +238,7 @@ class pca_sims(object):
         """Plot PCA analysis result."""
         pca_maxpcacomp_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set = \
                 plot_pca_result(self.pca, self.pca_data, self.samplelist, self.mass, 
-                                self.sample_description_set, self.pcaDir, self.outDir, self.f_group_numbers, max_pcacomp)
+                                self.sample_description_set, self.pcaDir, self.outDir, max_pcacomp)
         self.pca_maxpcacomp_df     = pca_maxpcacomp_df
         self.fig_screeplot         = fig_screeplot
         self.fig_scores_set        = fig_scores_set

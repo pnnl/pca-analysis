@@ -79,7 +79,6 @@ class App(ctk.CTk):
         # SIMS data
         self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.txt')
 
-        # TODO Finish
         self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
 
         # TODO Transition --> catalog
@@ -121,8 +120,7 @@ class App(ctk.CTk):
             sys.exit()
 
 
-    # TODO Finish implementing catalog details
-    # Callback on button_catalog that opens a checklist of sample groups, metadata, and more for users to customize their PCA report output.
+    # Callback on button_catalog that opens a window containing a table of samples with various metadata for users to customize their PCA report output.
     def catalog_callback(self):
         # Update PCA directory
         if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
@@ -139,9 +137,6 @@ class App(ctk.CTk):
         else:
             print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
             raise ValueError
-        
-        # TODO Remove
-        # subprocess.call(['notepad.exe', self.f_group_numbers])
 
 
     # Update the report from user changes
@@ -190,12 +185,10 @@ class App(ctk.CTk):
 
     # ------------------------------------------------------------- Set up backend input based on user changes  -------------------------------------------------------------
     def update_pca_instance(self):
-        # Update PCA directory along with group numbers and metadata
+        # Update PCA and catalog directories
         if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
             self.pca_dir = self.pca_dir_entry.get()
-            # TODO Transition --> catalog
-            self.f_group_numbers = os.path.join(self.pca_dir, 'sims-data/OriginalData/_groupnumbers.txt')
-            self.f_metadata = os.path.join(self.pca_dir, 'sims-data/OriginalData/_metadata.txt')
+            self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
             print('-------->Processed PCA directory successfully.')
         elif (not self.pca_dir_entry.get()):
             print('***Error! Empty entry. Please enter text and try again.***')
@@ -203,6 +196,14 @@ class App(ctk.CTk):
         else:
             print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
             raise ValueError
+        
+        # Update the user-selected catalog data. Throw an error and tell user if this file hasn't been generated yet.
+        try:
+            self.selected_data = pd.read_csv(os.path.join(self.catalog_dir, 'selected_data.csv'))
+        except FileNotFoundError:
+            print('***Error! The user data has not yet been selected from the catalog; the selected data .csv file could not be found. '
+                  + 'Please select the \'Edit Catalog\' button and try again after making the desired selections.***')
+            return
         
         # Update raw data file
         if (self.raw_data_entry.get()):
@@ -233,9 +234,8 @@ class App(ctk.CTk):
             print('***Error! Empty entry. Please enter text and try again.***')
             raise ValueError
 
-        # TODO Transition --> catalog
         # Initialize the pca_sims instance
-        self.pcasims = pca_sims(self.f_rawsims_data, self.f_metadata, self.f_doc_mass, self.pca_dir, self.outDir, self.positive_or_negative_ion, self.f_group_numbers)
+        self.pcasims = pca_sims(self.f_rawsims_data, self.f_doc_mass, self.pca_dir, self.outDir, self.positive_or_negative_ion, self.catalog_dir, self.selected_data)
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # Useful helper method for telling whether value x can be cast to int

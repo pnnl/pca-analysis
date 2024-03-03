@@ -52,16 +52,16 @@ class pca_sims_report(object):
             run.add_break(); run.add_break();run.add_break()
             run.add_break(); run.add_break();run.add_break()
 
-            # p=document.add_paragraph('ToF-SIMS testing date: {}'.format(description['date']))
+            # p=document.add_paragraph('ToF-SIMS testing date(s): {}'.format(description['date']))
             p=document.add_paragraph()
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = p.add_run('ToF-SIMS testing date: {}'.format(description['date']))
+            run = p.add_run('ToF-SIMS testing date(s): {}'.format(description['date']))
             run.font.size = Pt(14)
 
-            # p=document.add_paragraph('ToF-SIMS operator: {}'.format(description['operator']))
+            # p=document.add_paragraph('ToF-SIMS operator(s): {}'.format(description['operator']))
             p=document.add_paragraph()
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = p.add_run('ToF-SIMS operator: {}'.format(description['operator']))
+            run = p.add_run('ToF-SIMS operator(s): {}'.format(description['operator']))
             run.font.size = Pt(14)
     
 

@@ -81,14 +81,6 @@ class App(ctk.CTk):
 
         self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
 
-        # TODO Transition --> catalog
-        # Store the subset of groups from the data above which the user wants to analyze
-        self.f_group_numbers = os.path.join(self.pca_dir, 'sims-data/OriginalData/_groupnumbers.txt')
-
-        # TODO Transition --> catalog
-        # SIMS metadata
-        self.f_metadata = os.path.join(self.pca_dir, 'sims-data/OriginalData/_metadata.txt')
-
         # SIMS-PCA report
         self.f_report = os.path.join(self.pca_dir, 'output_sample/', 'report.docx')
 

@@ -20,7 +20,7 @@ negative_ion_category = ["Hydrocarbons", "Nitrogen-containing organics", "SiOx",
 
 class pca_sims(object):
 
-    # TODO Update using new arguments
+    # TODO Remove catalog_dir since it is unused?
     def __init__(
         self,
         f_rawsims_data: str,
@@ -71,9 +71,9 @@ class pca_sims(object):
         
         # Read data description
         description = {}
-        description['experiment'] = selected_data['Sample Short Name'].unique().tolist()    # TODO What should this be?
-        description['date'] = selected_data['Testing Date'].unique().tolist()
-        description['operator'] = selected_data['Operator'].unique().tolist()
+        description['experiment'] = ', '.join(selected_data['Sample Short Name'].unique().tolist())    # TODO Where to get the experiment name (currently not right)?
+        description['date'] = ', '.join(selected_data['Testing Date'].unique().tolist())
+        description['operator'] = ', '.join(selected_data['Operator'].unique().tolist())
 
         # Extract the sample names (e.g., Goethite-Tannic Acid 1400 ppm) from the metadata file. Note that we
         # must exclude the first 4 lines since they include other information.
@@ -81,8 +81,8 @@ class pca_sims(object):
         n_samples = len(group_nums)
         for i in range(n_samples):
             # TODO Do we need to sort again?
-            sample_number      = selected_data.at[i,0]
-            sample_description = selected_data.at[i,4]
+            sample_number      = selected_data.at[i,'Sample #']
+            sample_description = selected_data.at[i,'Sample Short Name']
             sample_description_set.append([int(sample_number), str(sample_description)])
         
         nmass, ncomp = rawdata.shape

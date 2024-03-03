@@ -4,6 +4,7 @@ import os
 import sys
 import logging
 import traceback
+import pandas as pd
 # Disable matplotlib font logging (it outputs unnecessary info about missing fonts)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
@@ -24,11 +25,10 @@ positive_or_negative_ion = 'positive'
 # SIMS data
 f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/High P Pasture_Chris_Positive.txt')
 
-# Store the subset of groups from the data above which the user wants to analyze
-f_group_numbers = os.path.join(pcaDir, 'sims-data/OriginalData/_groupnumbers.txt')
-
-# SIMS metadata
-f_metadata = os.path.join(pcaDir, 'sims-data/OriginalData/_metadata.txt')
+# TODO UNTESTED; do we even need the CLI program main.py anymore?
+# Store the subset of groups from the data above which the user wants to analyze along with some other metadata.
+catalog_dir = os.path.join(pcaDir, 'sims-data/Catalog')
+selected_data = pd.read_csv(os.path.join(catalog_dir, 'selected_data.csv'))
 
 # SIMS-PCA report
 f_report = os.path.join(pcaDir, 'output_sample/Report High P Pasture_Chris_Positive.docx')
@@ -51,9 +51,8 @@ else:
     print('***Error! Invalid input for positive_or_negative_ion; choose \'positive\' or \'negative\'***')
     sys.exit()
 
-# TODO Update with catalog directory
 # Initialize the pca_sims instance
-pcasims = pca_sims(f_rawsims_data, f_metadata, f_doc_mass, pcaDir, outDir, positive_or_negative_ion, f_group_numbers)
+pcasims = pca_sims(f_rawsims_data, f_doc_mass, pcaDir, outDir, positive_or_negative_ion, catalog_dir, selected_data)
 
 
 # Take user input to decide whether we would like to do PCA as yes or no (usually done on the first pass) or update the

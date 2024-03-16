@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import ttk
 import os
 import sys
+import traceback
 import subprocess
 import logging
 import pandas as pd
@@ -15,6 +16,33 @@ from pca_sims.pca_sims import pca_sims
 # Specifies the basic structure of the GUI application
 class App(ctk.CTk):
     def __init__(self):
+        # ---------------------------------------------------- Initialize various paths and parameters for pcasims to use later----------------------------------------------
+        # The main PCA folder (for example, if storing your data on Windows at PNNL, this could be
+        # /mnt/c/Users/<INSERT USERNAME>/'OneDrive - PNNL'/Documents/pca-analysis/SIMS_PCA/SIMS_PCA).
+        self.pca_dir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
+
+        # # TODO ^ (See above; redundant?)
+        # # SIMS data
+        # self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.txt')
+
+        # self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
+
+        # # SIMS-PCA report
+        # self.f_report = os.path.join(self.pca_dir, 'output_sample/', 'report.docx')
+
+        # # Output folder
+        self.out_dir = os.path.join(self.pca_dir, 'output_sample')
+
+        # # Document positive and negative mass
+        self.f_doc_positive_mass = os.path.join(self.pca_dir, "sims-data", "positive_doc_mass_record.csv")
+        self.f_doc_negative_mass = os.path.join(self.pca_dir, "sims-data", "negative_doc_mass_record.csv")
+
+        # # Indicates to rest of code whether we are handling positive or negative ions
+        self.positive_or_negative_ion = 'positive'
+        self.f_doc_mass = self.f_doc_positive_mass if self.positive_or_negative_ion == 'positive' else self.f_doc_negative_mass
+        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        
         # --------------------------------------------------------------------------- Setup for basic GUI -------------------------------------------------------------------
         super().__init__()
         self.geometry('960x720')
@@ -27,7 +55,7 @@ class App(ctk.CTk):
         # Add entries for the paths to essential files
         self.pca_dir_label = ctk.CTkLabel(self, text='Enter PCA directory here: ', width=40, height=20)
         self.pca_dir_label.grid(row=0, column=0, padx=10, pady=(50, 5), sticky="w")
-        self.pca_dir_entry = ctk.CTkEntry(self, textvariable=ctk.StringVar(value='/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'), width=400, height=20)
+        self.pca_dir_entry = ctk.CTkEntry(self, textvariable=ctk.StringVar(value=self.pca_dir), width=400, height=20)
         self.pca_dir_entry.grid(row=0, column=1, padx=10, pady=(50, 5))
 
         self.raw_data_label = ctk.CTkLabel(self, text='Enter name of raw data file with file extension here: ', width=40, height=20)
@@ -70,33 +98,6 @@ class App(ctk.CTk):
         # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-        # ---------------------------------------------------- Initialize various paths and parameters for pcasims to use later----------------------------------------------
-        # The main PCA folder (for example, if storing your data on Windows at PNNL, this could be
-        # /mnt/c/Users/<INSERT USERNAME>/'OneDrive - PNNL'/Documents/pca-analysis/SIMS_PCA/SIMS_PCA).
-        self.pca_dir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
-
-        # TODO ^ (See above; redundant?)
-        # SIMS data
-        self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.txt')
-
-        self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
-
-        # SIMS-PCA report
-        self.f_report = os.path.join(self.pca_dir, 'output_sample/', 'report.docx')
-
-        # Output folder
-        self.outDir = os.path.join(self.pca_dir, 'output_sample')
-
-        # Document positive and negative mass
-        self.f_doc_positive_mass = os.path.join(self.pca_dir, "sims-data", "positive_doc_mass_record.csv")
-        self.f_doc_negative_mass = os.path.join(self.pca_dir, "sims-data", "negative_doc_mass_record.csv")
-
-        # Indicates to rest of code whether we are handling positive or negative ions
-        self.positive_or_negative_ion = 'positive'
-        self.f_doc_mass = self.f_doc_positive_mass if self.positive_or_negative_ion == 'positive' else self.f_doc_negative_mass
-        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
     # ------------------------------------------------------- Create the callback commands that will run the program --------------------------------------------------------
     # Callback on positive / negative button that identifies the type of ions in the data file
     def pos_or_neg_button_callback(self, value: str):
@@ -121,14 +122,15 @@ class App(ctk.CTk):
 
             # Get the catalog file contents for later use
             self.catalog = pd.read_csv(os.path.join(self.pca_dir, 'sims-data/Catalog/catalog.csv'))
+            self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
             # Create a CTk window for the catalog
             self.catalog_window = CatalogWindow(self.catalog)
         elif (not self.pca_dir_entry.get()):
             print('***Error! Empty entry. Please enter text and try again.***')
             raise ValueError
-        else:
-            print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
-            raise ValueError
+        # else:
+        #     print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
+        #     raise ValueError
 
 
     # Update the report from user changes
@@ -136,7 +138,10 @@ class App(ctk.CTk):
         # Initialize pcasims if it doesn't already exist and update it with any user changes the user has made to its desired parameters
         try:
             self.update_pca_instance()
-        except:
+        except Exception as e:
+            if not type(e) == ValueError:
+                print('No pca instance update performed due to the following exception:')
+                print(traceback.print_exc(),'\n')
             return
 
         print('-------->Updating Peak Assignments from User Changes to Report...')
@@ -152,7 +157,10 @@ class App(ctk.CTk):
         # Initialize pcasims if it doesn't already exist and update it with any user changes the user has made to its desired parameters
         try:
             self.update_pca_instance()
-        except:
+        except Exception as e:
+            if not type(e) == ValueError:
+                print('No pca instance update performed due to the following exception:')
+                print(traceback.print_exc(),'\n')
             return
 
         # Perform PCA
@@ -167,7 +175,7 @@ class App(ctk.CTk):
         self.pcasims.plot_pca_result(self.max_pcacomp)
 
         # Generate the report
-        self.pcasims.generate_report(f_report=self.f_report, ion_sign=self.positive_or_negative_ion, max_pcacomp=self.max_pcacomp)
+        self.pcasims.generate_report(out_dir=self.out_dir, f_report=self.f_report, ion_sign=self.positive_or_negative_ion, max_pcacomp=self.max_pcacomp)
 
         print('-------->Data Exporting...')
         print('\n\n\n-------->Congratulations!')
@@ -181,11 +189,12 @@ class App(ctk.CTk):
         if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
             self.pca_dir = self.pca_dir_entry.get()
             self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
+            self.out_dir = os.path.join(self.pca_dir, 'output_sample')
             print('-------->Processed PCA directory successfully.')
         elif (not self.pca_dir_entry.get()):
             print('***Error! Empty entry. Please enter text and try again.***')
             raise ValueError
-        else:
+        elif (not ('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) or not (self.pca_dir_entry.get()[-1] == '/')):
             print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
             raise ValueError
         
@@ -227,7 +236,7 @@ class App(ctk.CTk):
             raise ValueError
 
         # Initialize the pca_sims instance
-        self.pcasims = pca_sims(self.f_rawsims_data, self.f_doc_mass, self.pca_dir, self.outDir, self.positive_or_negative_ion, self.catalog_dir, self.selected_data)
+        self.pcasims = pca_sims(self.f_rawsims_data, self.f_doc_mass, self.pca_dir, self.out_dir, self.positive_or_negative_ion, self.catalog_dir, self.selected_data)
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # Useful helper method for telling whether value x can be cast to int

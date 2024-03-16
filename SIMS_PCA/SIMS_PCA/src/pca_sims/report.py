@@ -3,6 +3,7 @@
 import re
 from typing import Dict, Any, Optional
 import sys
+import os
 
 from docx import Document
 from docx.shared import Inches
@@ -204,11 +205,11 @@ class pca_sims_report(object):
     
 
     # Add the bar chart of percentage explained variance for each PC
-    def add_scree_plot_page(self):
+    def add_scree_plot_page(self, out_dir):
         document = self.document
 
         document.add_page_break()
-        document.add_picture('/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/output_sample/Scree Plot.png', width=Inches(7))  # (7" Score plots + 0.3" margin + 0.3" margin = 7.6" total)
+        document.add_picture(os.path.join(out_dir, 'Scree Plot.png'), width=Inches(7))  # (7" Score plots + 0.3" margin + 0.3" margin = 7.6" total)
         last_paragraph = document.paragraphs[-1]
         last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 

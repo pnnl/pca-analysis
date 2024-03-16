@@ -71,7 +71,7 @@ class pca_sims(object):
         
         # Read data description
         description = {}
-        description['experiment'] = ', '.join(selected_data['Sample Short Name'].unique().tolist())    # TODO Where to get the experiment name (currently not right)?
+        description['experiment'] = 'Samples Included: ' + ', '.join(selected_data['Sample Short Name'].unique().tolist())    # TODO Where to get the experiment name (currently not right)?
         description['date'] = ', '.join(selected_data['Testing Date'].unique().tolist())
         description['operator'] = ', '.join(selected_data['Operator'].unique().tolist())
 
@@ -247,7 +247,7 @@ class pca_sims(object):
         self.fig_loading_set       = fig_loading_set
     
 
-    def generate_report(self, f_report:str='report.docx', ion_sign:str='positive', max_pcacomp:int=5):
+    def generate_report(self, out_dir, f_report:str='report.docx', ion_sign:str='positive', max_pcacomp:int=5):
         """Generate the report."""
         print('-------->Generating the report now...')
 
@@ -274,7 +274,7 @@ class pca_sims(object):
                 self.generate_analysis_pcacomp(report_exists, pcacomp)
 
         # Add the bar chart of percentage explained variance for each PC
-        self.add_scree_plot()
+        self.add_scree_plot(out_dir)
         
         # Save the report
         self.report.save()
@@ -440,8 +440,8 @@ class pca_sims(object):
 
 
     # Add the bar chart of percentage explained variance for each PC
-    def add_scree_plot(self):
-        self.report.add_scree_plot_page()
+    def add_scree_plot(self, out_dir):
+        self.report.add_scree_plot_page(out_dir)
 
 
     # Create a loadings table from the PCA scores

@@ -11,27 +11,28 @@ logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 from pca_sims.pca_sims import pca_sims
 
 
+# TODO Catalog, out_dir, and hard-coded value removal changes UNTESTED; do we still need the CLI program main.py?
+
 # ------------------------------------------------- VALUES THAT USERS MAY NEED TO CHANGE -------------------------------------------------
 # The main PCA folder (for example, if storing your data on Windows at PNNL, this could be
 # /mnt/c/Users/<INSERT USERNAME>/'OneDrive - PNNL'/Documents/pca-analysis/SIMS_PCA/SIMS_PCA).
-pcaDir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
+pca_dir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 
 # Output folder
-outDir = os.path.join(pcaDir, 'output_sample')
+out_dir = os.path.join(pca_dir, 'output_sample')
 
 # Indicates to rest of code whether we are handling positive or negative ions
 positive_or_negative_ion = 'positive'
 
 # SIMS data
-f_rawsims_data = os.path.join(pcaDir, 'sims-data/OriginalData/High P Pasture_Chris_Positive.txt')
+f_rawsims_data = os.path.join(pca_dir, 'sims-data/OriginalData/High P Pasture_Chris_Positive.txt')
 
-# TODO UNTESTED; do we even need the CLI program main.py anymore?
 # Store the subset of groups from the data above which the user wants to analyze along with some other metadata.
-catalog_dir = os.path.join(pcaDir, 'sims-data/Catalog')
+catalog_dir = os.path.join(pca_dir, 'sims-data/Catalog')
 selected_data = pd.read_csv(os.path.join(catalog_dir, 'selected_data.csv'))
 
 # SIMS-PCA report
-f_report = os.path.join(pcaDir, 'output_sample/Report High P Pasture_Chris_Positive.docx')
+f_report = os.path.join(pca_dir, 'output_sample/Report High P Pasture_Chris_Positive.docx')
 
 # The number of PCA components for which PCA plots will be created and loading tables will be generated in the report
 max_pcacomp = 5
@@ -39,8 +40,8 @@ max_pcacomp = 5
 
 
 # Document positive and negative mass
-f_doc_positive_mass = os.path.join(pcaDir, "sims-data", "positive_doc_mass_record.csv")
-f_doc_negative_mass = os.path.join(pcaDir, "sims-data", "negative_doc_mass_record.csv")
+f_doc_positive_mass = os.path.join(pca_dir, "sims-data", "positive_doc_mass_record.csv")
+f_doc_negative_mass = os.path.join(pca_dir, "sims-data", "negative_doc_mass_record.csv")
 
 # User input specifies which document of stored masses should be used for the pca simulations
 if positive_or_negative_ion == 'positive':
@@ -52,7 +53,7 @@ else:
     sys.exit()
 
 # Initialize the pca_sims instance
-pcasims = pca_sims(f_rawsims_data, f_doc_mass, pcaDir, outDir, positive_or_negative_ion, catalog_dir, selected_data)
+pcasims = pca_sims(f_rawsims_data, f_doc_mass, pca_dir, out_dir, positive_or_negative_ion, catalog_dir, selected_data)
 
 
 # Take user input to decide whether we would like to do PCA as yes or no (usually done on the first pass) or update the
@@ -89,7 +90,7 @@ else:
     pcasims.plot_pca_result(max_pcacomp=max_pcacomp)
 
     # Generate the report
-    pcasims.generate_report(f_report=f_report, ion_sign=positive_or_negative_ion, max_pcacomp=max_pcacomp)
+    pcasims.generate_report(out_dir, f_report=f_report, ion_sign=positive_or_negative_ion, max_pcacomp=max_pcacomp)
 
     print('-------->Data Exporting...')
     print('\n\n\n-------->Congratulations!')

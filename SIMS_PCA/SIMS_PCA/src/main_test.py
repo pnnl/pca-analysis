@@ -21,23 +21,23 @@ class App(ctk.CTk):
         # /mnt/c/Users/<INSERT USERNAME>/'OneDrive - PNNL'/Documents/pca-analysis/SIMS_PCA/SIMS_PCA).
         self.pca_dir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 
-        # # TODO ^ (See above; redundant?)
-        # # SIMS data
+        # TODO ^ (See above; redundant?)
+        # SIMS data
         # self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.txt')
 
         # self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
 
-        # # SIMS-PCA report
+        # SIMS-PCA report
         # self.f_report = os.path.join(self.pca_dir, 'output_sample/', 'report.docx')
 
-        # # Output folder
+        # Output folder
         self.out_dir = os.path.join(self.pca_dir, 'output_sample')
 
-        # # Document positive and negative mass
+        # Document positive and negative mass
         self.f_doc_positive_mass = os.path.join(self.pca_dir, "sims-data", "positive_doc_mass_record.csv")
         self.f_doc_negative_mass = os.path.join(self.pca_dir, "sims-data", "negative_doc_mass_record.csv")
 
-        # # Indicates to rest of code whether we are handling positive or negative ions
+        # Indicates to rest of code whether we are handling positive or negative ions
         self.positive_or_negative_ion = 'positive'
         self.f_doc_mass = self.f_doc_positive_mass if self.positive_or_negative_ion == 'positive' else self.f_doc_negative_mass
         # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -115,27 +115,28 @@ class App(ctk.CTk):
 
     # Callback on button_catalog that opens a window containing a table of samples with various metadata for users to customize their PCA report output.
     def catalog_callback(self):
-        # Update PCA directory
-        if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
+        # Update PCA directory and attempt to bring up the catalog for the user to edit.
+        if (not self.pca_dir_entry.get()):
+            print('***Error! Empty entry. Please enter text and try again.***')
+            return
+        elif (not ('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) or not (self.pca_dir_entry.get()[-1] == '/')):
+            print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
+            return
+        else:
             self.pca_dir = self.pca_dir_entry.get()
             print('-------->Processed PCA directory successfully.')
+            print('-------->Opening catalog window...')
 
             # Get the catalog file contents for later use
             self.catalog = pd.read_csv(os.path.join(self.pca_dir, 'sims-data/Catalog/catalog.csv'))
             self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
             # Create a CTk window for the catalog
             self.catalog_window = CatalogWindow(self.catalog)
-        elif (not self.pca_dir_entry.get()):
-            print('***Error! Empty entry. Please enter text and try again.***')
-            raise ValueError
-        # else:
-        #     print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
-        #     raise ValueError
 
 
     # Update the report from user changes
     def update_callback(self):
-        # Initialize pcasims if it doesn't already exist and update it with any user changes the user has made to its desired parameters
+        # Initialize pcasims if it doesn't already exist and update it with any user changes the user has made to the desired parameters
         try:
             self.update_pca_instance()
         except Exception as e:
@@ -154,7 +155,7 @@ class App(ctk.CTk):
 
     # Generate the report
     def generate_callback(self):
-        # Initialize pcasims if it doesn't already exist and update it with any user changes the user has made to its desired parameters
+        # Initialize pcasims if it doesn't already exist and update it with any user changes the user has made to the desired parameters
         try:
             self.update_pca_instance()
         except Exception as e:
@@ -186,17 +187,17 @@ class App(ctk.CTk):
     # ------------------------------------------------------------- Set up backend input based on user changes  -------------------------------------------------------------
     def update_pca_instance(self):
         # Update PCA and catalog directories
-        if (('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) and self.pca_dir_entry.get()[-1] == '/'):
-            self.pca_dir = self.pca_dir_entry.get()
-            self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
-            self.out_dir = os.path.join(self.pca_dir, 'output_sample')
-            print('-------->Processed PCA directory successfully.')
-        elif (not self.pca_dir_entry.get()):
+        if (not self.pca_dir_entry.get()):
             print('***Error! Empty entry. Please enter text and try again.***')
             raise ValueError
         elif (not ('SIMS_PCA/SIMS_PCA/' in self.pca_dir_entry.get()) or not (self.pca_dir_entry.get()[-1] == '/')):
             print('***Error! Invalid input for pca_dir. Please make sure it ends with \'pca-analysis/SIMS_PCA/SIMS_PCA/\' and try again.***')
             raise ValueError
+        else:
+            self.pca_dir = self.pca_dir_entry.get()
+            self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
+            self.out_dir = os.path.join(self.pca_dir, 'output_sample')
+            print('-------->Processed PCA directory successfully.')
         
         # Update the user-selected catalog data. Throw an error and tell user if this file hasn't been generated yet.
         try:
@@ -223,14 +224,12 @@ class App(ctk.CTk):
             raise ValueError
         
         # Check whether number of PCA components desired is actually an integer
-        if (self.pcacomp_entry.get()):
-            if (self.isint(self.pcacomp_entry.get())):
-                self.max_pcacomp = int(self.pcacomp_entry.get())
-            else:
-                print(('***Error! Number of PCA components given is not an integer.***'))
-                raise ValueError
-
+        if (self.pcacomp_entry.get() and self.isint(self.pcacomp_entry.get())):
+            self.max_pcacomp = int(self.pcacomp_entry.get())
             print('-------->Processed number of PCA components successfully.')
+        elif (self.pcacomp_entry.get() and not self.isint(self.pcacomp_entry.get())):
+            print(('***Error! Number of PCA components given is not an integer.***'))
+            raise ValueError
         else:
             print('***Error! Empty entry. Please enter text and try again.***')
             raise ValueError

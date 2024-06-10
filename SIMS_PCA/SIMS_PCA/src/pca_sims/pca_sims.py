@@ -59,7 +59,7 @@ class pca_sims(object):
 
             columns_to_drop = []
             for label in rawdata.columns:
-                label_has_no_sub_group_num = all([not str(num) in label for num in group_nums])
+                label_has_no_sub_group_num = all([not str(num) in re.split('[PN]', label)[0] for num in group_nums]) # Remove last digit after P/N to ensure no false positive columns are kept
                 if label_has_no_sub_group_num:
                     columns_to_drop.append(label)
 

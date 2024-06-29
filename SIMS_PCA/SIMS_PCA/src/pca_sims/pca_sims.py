@@ -48,8 +48,9 @@ class pca_sims(object):
             print('***Error! Cannot Find Correct Raw Data File!***')
             sys.exit()
 
-        # TODO We don't throw an error on group numbers from catalog file that don't match up with the samples.
-        #      We print all of them out, but incorrect numbers won't affect the filtering anyway. Is this assumption fine?
+        # Assumption - We don't throw an error on group numbers from catalog file that don't match up with the samples.
+        #              We print all of them out, but incorrect numbers will be left anyway. We'll only get an error if 
+        #              none of the catalog numbers are found in the raw data labels, and this is handled later.
         # Read subset of group numbers on which we want to perform PCA from user-generated selected_data DataFrame, 
         # then filter the raw data so that it only contains those columns
         try:
@@ -59,8 +60,15 @@ class pca_sims(object):
 
             columns_to_drop = []
             for label in rawdata.columns:
-                label_has_no_sub_group_num = all([not str(num) in re.split('[PN]', label)[0] for num in group_nums]) # Remove last digit after P/N to ensure no false positive columns are kept
-                if label_has_no_sub_group_num:
+                # Extract the raw data sample numbers from their column labels
+                cur_raw_data_num = int(re.split('-[PN]', label)[0])
+
+                # True if no group numbers are found in label for current raw data column; False if not. Remove last 
+                # digit after P/N to ensure no false positive columns are kept.
+                label_has_no_group_num = all([num != cur_raw_data_num for num in group_nums])
+
+                # Add labels that don't match to list of columns to drop.
+                if label_has_no_group_num:
                     columns_to_drop.append(label)
 
             rawdata.drop(columns=columns_to_drop, inplace=True)
@@ -137,16 +145,14 @@ class pca_sims(object):
             samplelist=scaled_data.index
             labels=['PC'+str(x) for x in range(1,self.ncomp+1)]
 
-            # TODO Add error for case where no group numbers from file match up with data (see line 143).
             # PCA
             pca=PCA()
             pca.fit(scaled_data)
             pca_data=pca.transform(scaled_data)
             pca_df=pd.DataFrame(pca_data,index=samplelist,columns=labels)
-
         except:
             print(traceback.print_exc())
-            print('***Error! Cannot Recognize Data!***')
+            print('***Error! No PCA data found! Make sure the first column of the selected data from the catalog has sample numbers that match up with the raw data file(s).***')
             sys.exit()
         
         self.scaled_data = scaled_data

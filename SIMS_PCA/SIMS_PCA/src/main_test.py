@@ -21,15 +21,6 @@ class App(ctk.CTk):
         # /mnt/c/Users/<INSERT USERNAME>/'OneDrive - PNNL'/Documents/pca-analysis/SIMS_PCA/SIMS_PCA).
         self.pca_dir = '/home/welch688/pca-analysis/SIMS_PCA/SIMS_PCA/'
 
-        # TODO ^ (See above; redundant?)
-        # SIMS data
-        # self.f_rawsims_data = os.path.join(self.pca_dir, 'sims-data/OriginalData/', 'High P Pasture_Chris_Positive.txt')
-
-        # self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
-
-        # SIMS-PCA report
-        # self.f_report = os.path.join(self.pca_dir, 'output_sample/', 'report.docx')
-
         # Output folder
         self.out_dir = os.path.join(self.pca_dir, 'output_sample')
 
@@ -304,24 +295,6 @@ class CatalogWindow(ctk.CTkToplevel):
         treestyle.map('Treeview', background=[('selected', bg_color)], foreground=[('selected', selected_color)])
         self.bind("<<TreeviewSelect>>", lambda event: self.focus_set())
 
-        # TODO Better style for catalog below?
-        # style = ttk.Style()
-        # style.theme_use("default")
-        # style.configure("Treeview",
-        #                 background="#2a2d2e",
-        #                 foreground="white",
-        #                 rowheight=25,
-        #                 fieldbackground="#343638",
-        #                 bordercolor="#343638",
-        #                 borderwidth=0)
-        # style.map('Treeview', background=[('selected', '#22559b')])
-        # style.configure("Treeview.Heading",
-        #                 background="#565b5e",
-        #                 foreground="white",
-        #                 relief="flat")
-        # style.map("Treeview.Heading",
-        #             background=[('active', '#3484F0')])
-        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # Saves current catalog and exits window
     def save_callback(self):

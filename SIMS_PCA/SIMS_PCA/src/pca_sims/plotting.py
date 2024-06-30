@@ -40,7 +40,6 @@ def plot_pca_result(
     sample_description_set: List,
     pcaDir: str,
     outDir: str,
-    f_group_numbers: str='sims-data/OriginalData/_groupnumbers.txt',
     max_pcacomp: int=5):
     """
     The main plotting functions.

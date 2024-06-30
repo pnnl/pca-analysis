@@ -20,15 +20,16 @@ negative_ion_category = ["Hydrocarbons", "Nitrogen-containing organics", "SiOx",
 
 class pca_sims(object):
 
+    # TODO Remove catalog_dir since it is unused?
     def __init__(
         self,
         f_rawsims_data: str,
-        f_metadata: str,
         f_doc_mass: str,
         pcaDir: str,
         outDir: str,
         positive_or_negative_ion: str,
-        f_group_numbers: str
+        catalog_dir: str,
+        selected_data: pd.DataFrame
     ):
         print('\n-------->Reading Data...')
         # Read SIMS data
@@ -47,20 +48,27 @@ class pca_sims(object):
             print('***Error! Cannot Find Correct Raw Data File!***')
             sys.exit()
 
-        # TODO We don't throw an error on numbers entered into f_group_numbers .txt file that don't match up with the samples.
-        #      We print all of them out, but incorrect numbers won't affect the filtering anyway. Is this assumption fine?
-        # Read subset of group numbers on which we want to perform PCA from user-specified .csv file, then filter the raw data so that 
-        # it only contains those columns
+        # Assumption - We don't throw an error on group numbers from catalog file that don't match up with the samples.
+        #              We print all of them out, but incorrect numbers will be left anyway. We'll only get an error if 
+        #              none of the catalog numbers are found in the raw data labels, and this is handled later.
+        # Read subset of group numbers on which we want to perform PCA from user-generated selected_data DataFrame, 
+        # then filter the raw data so that it only contains those columns
         try:
-            group_nums = pd.read_csv(f_group_numbers)
-            group_nums = group_nums['Group'].unique().tolist()
+            group_nums = selected_data['Sample #'].unique().tolist()
             group_nums.sort()
             print('\n\tSample group numbers: ', group_nums, '\n')
 
             columns_to_drop = []
             for label in rawdata.columns:
-                label_has_no_sub_group_num = all([not str(num) in label for num in group_nums])
-                if label_has_no_sub_group_num:
+                # Extract the raw data sample numbers from their column labels
+                cur_raw_data_num = int(re.split('-[PN]', label)[0])
+
+                # True if no group numbers are found in label for current raw data column; False if not. Remove last 
+                # digit after P/N to ensure no false positive columns are kept.
+                label_has_no_group_num = all([num != cur_raw_data_num for num in group_nums])
+
+                # Add labels that don't match to list of columns to drop.
+                if label_has_no_group_num:
                     columns_to_drop.append(label)
 
             rawdata.drop(columns=columns_to_drop, inplace=True)
@@ -71,26 +79,26 @@ class pca_sims(object):
         
         # Read data description
         description = {}
-        metadata_df = pd.read_csv(f_metadata, index_col=0, header=None)
-        description['experiment'] = metadata_df.loc['Experiment',1]
-        description['date'] = metadata_df.loc['Date',1]
-        description['operator'] = metadata_df.loc['Operator',1]
+        description['experiment'] = 'Samples Included: ' + ', '.join(selected_data['Sample Short Name'].unique().tolist())    # TODO Where to get the experiment name (currently not right)?
+        description['date'] = ', '.join(selected_data['Testing Date'].unique().tolist())
+        description['operator'] = ', '.join(selected_data['Operator'].unique().tolist())
 
         # Extract the sample names (e.g., Goethite-Tannic Acid 1400 ppm) from the metadata file. Note that we
         # must exclude the first 4 lines since they include other information.
         sample_description_set = []
-        n_samples = metadata_df.shape[0] - 3
+        n_samples = len(group_nums)
         for i in range(n_samples):
-            sample_number      = metadata_df.index[i+3]
-            sample_description = metadata_df.loc[sample_number,1]
+            # TODO Do we need to sort again?
+            sample_number      = selected_data.at[i,'Sample #']
+            sample_description = selected_data.at[i,'Sample Short Name']
             sample_description_set.append([int(sample_number), str(sample_description)])
         
         nmass, ncomp = rawdata.shape
 
         self.f_rawsims_data         = f_rawsims_data
-        self.f_metadata             = f_metadata
         self.pcaDir                 = pcaDir
         self.outDir                 = outDir
+        self.group_numbers          = group_nums
         self.description            = description
         self.sample_description_set = sample_description_set
         self.rawdata                = rawdata
@@ -98,7 +106,7 @@ class pca_sims(object):
         self.mass_raw               = mass_raw
         self.nmass                  = nmass
         self.ncomp                  = ncomp
-        self.f_group_numbers        = f_group_numbers
+        self.selected_data          = selected_data
 
         if positive_or_negative_ion == 'positive':
             self.positive_ion = True
@@ -137,16 +145,14 @@ class pca_sims(object):
             samplelist=scaled_data.index
             labels=['PC'+str(x) for x in range(1,self.ncomp+1)]
 
-            # TODO Add error for case where no group numbers from file match up with data (see line 143).
             # PCA
             pca=PCA()
             pca.fit(scaled_data)
             pca_data=pca.transform(scaled_data)
             pca_df=pd.DataFrame(pca_data,index=samplelist,columns=labels)
-
         except:
             print(traceback.print_exc())
-            print('***Error! Cannot Recognize Data!***')
+            print('***Error! No PCA data found! Make sure the first column of the selected data from the catalog has sample numbers that match up with the raw data file(s).***')
             sys.exit()
         
         self.scaled_data = scaled_data
@@ -238,7 +244,7 @@ class pca_sims(object):
         """Plot PCA analysis result."""
         pca_maxpcacomp_df, fig_screeplot, fig_scores_set, fig_scores_confid_set, fig_scores_single_set, fig_loading_set = \
                 plot_pca_result(self.pca, self.pca_data, self.samplelist, self.mass, 
-                                self.sample_description_set, self.pcaDir, self.outDir, self.f_group_numbers, max_pcacomp)
+                                self.sample_description_set, self.pcaDir, self.outDir, max_pcacomp)
         self.pca_maxpcacomp_df     = pca_maxpcacomp_df
         self.fig_screeplot         = fig_screeplot
         self.fig_scores_set        = fig_scores_set
@@ -247,7 +253,7 @@ class pca_sims(object):
         self.fig_loading_set       = fig_loading_set
     
 
-    def generate_report(self, f_report:str='report.docx', ion_sign:str='positive', max_pcacomp:int=5):
+    def generate_report(self, out_dir, f_report:str='report.docx', ion_sign:str='positive', max_pcacomp:int=5):
         """Generate the report."""
         print('-------->Generating the report now...')
 
@@ -274,7 +280,7 @@ class pca_sims(object):
                 self.generate_analysis_pcacomp(report_exists, pcacomp)
 
         # Add the bar chart of percentage explained variance for each PC
-        self.add_scree_plot()
+        self.add_scree_plot(out_dir)
         
         # Save the report
         self.report.save()
@@ -440,8 +446,8 @@ class pca_sims(object):
 
 
     # Add the bar chart of percentage explained variance for each PC
-    def add_scree_plot(self):
-        self.report.add_scree_plot_page()
+    def add_scree_plot(self, out_dir):
+        self.report.add_scree_plot_page(out_dir)
 
 
     # Create a loadings table from the PCA scores

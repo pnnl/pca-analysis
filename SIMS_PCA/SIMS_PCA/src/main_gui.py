@@ -188,6 +188,9 @@ class App(ctk.CTk):
             self.pca_dir = self.pca_dir_entry.get()
             self.catalog_dir = os.path.join(self.pca_dir, 'sims-data/Catalog')
             self.out_dir = os.path.join(self.pca_dir, 'output_sample')
+            self.f_doc_positive_mass = os.path.join(self.pca_dir, "sims-data", "positive_doc_mass_record.csv")
+            self.f_doc_negative_mass = os.path.join(self.pca_dir, "sims-data", "negative_doc_mass_record.csv")
+            self.f_doc_mass = self.f_doc_positive_mass if self.positive_or_negative_ion == 'positive' else self.f_doc_negative_mass
             print('-------->Processed PCA directory successfully.')
         
         # Update the user-selected catalog data. Throw an error and tell user if this file hasn't been generated yet.

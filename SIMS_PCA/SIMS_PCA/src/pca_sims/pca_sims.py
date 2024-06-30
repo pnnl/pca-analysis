@@ -334,7 +334,7 @@ class pca_sims(object):
             # As a precondition, check first whether there is any assignment at all in the current row to analyze.
             if (positive_loading_table.at[ind, "Document Mass"] and positive_loading_table.at[ind, "Initial Peak Assignment"]):
                 cur_doc_mass = positive_loading_table.at[ind, "Document Mass"][0]
-                mm_dataframe_first_doc_masses = np.float_([mm[0] for mm in self.measured_masses['document_mass']])
+                mm_dataframe_first_doc_masses = np.float64([mm[0] for mm in self.measured_masses['document_mass']])
                 matching_array = np.isclose(mm_dataframe_first_doc_masses, cur_doc_mass, atol=1e-1)
 
                 if (np.sum(matching_array) >= 1):
@@ -382,7 +382,7 @@ class pca_sims(object):
             # As a precondition, check first whether there is any assignment at all in the current row to analyze.
             if (negative_loading_table.at[ind, "Document Mass"] and negative_loading_table.at[ind, "Initial Peak Assignment"]):
                 cur_doc_mass = negative_loading_table.at[ind, "Document Mass"][0]
-                mm_dataframe_first_doc_masses = np.float_([mm[0] for mm in self.measured_masses['document_mass']])
+                mm_dataframe_first_doc_masses = np.float64([mm[0] for mm in self.measured_masses['document_mass']])
                 matching_array = np.isclose(mm_dataframe_first_doc_masses, cur_doc_mass, atol=1e-1)
 
                 if (np.sum(matching_array) >= 1):
@@ -819,8 +819,8 @@ class pca_sims(object):
                         # Calculate the deviations between the measured masses and document masses and express them as floats to be stored for later.
                         # TODO Currently cutting off any elements beyond first n (i.e., if one array is longer than the other); may need to fix in future.
                         try:
-                            mm_array = np.array(np.float_(cur_measured_masses.split(',')))
-                            dm_array = np.array(np.float_(latest_doc_masses.split(',')))
+                            mm_array = np.array(np.float64(cur_measured_masses.split(',')))
+                            dm_array = np.array(np.float64(latest_doc_masses.split(',')))
                         except:
                             print("***Error! Encountered row containing a Measured Mass entry (see ", cur_measured_masses, ") but neither a Document Mass nor an", 
                                   "Updated Document Mass entry. Please add one of these entries before trying again.***")

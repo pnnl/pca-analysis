@@ -117,6 +117,6 @@ The code repository has been developed using Python 3.8.10 and the following pac
 
 
 
-**Developers**: Peishi Jiang, Cole Welch, Zihua Zhu, Yadong Zhou
+**Developers**: Zihua Zhu, Ping Chen, Cole Welch, Peishi Jiang, Qian Zhou, Yadong Zhou
 
-**Contact**: cole.welch@pnnl.gov; peishi.jiang@pnnl.gov; zihua.zhu@pnnl.gov
+**Contact**: zihua.zhu@pnnl.gov; ping.chen@pnnl.gov; peishi.jiang@pnnl.gov; qian.zhou@pnnl.gov
